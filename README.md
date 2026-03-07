@@ -1,5 +1,51 @@
 # WOM — Weekly Operation Model
 
+WOM is a **lot-based supply chain planning engine**.
+
+           WOM — Weekly Operation Model
+           Lot-based Supply Chain Planning Engine
+
+
+        Final Market Demand
+                 │
+                 │  Demand creates
+                 ▼
+             LOT_ID Lists
+   (NODE + PRODUCT + YYYYWW + SEQUENCE)
+                 │
+                 │  Backward planning
+                 ▼
+        Lead-Time Positioned Lots
+                 │
+                 │
+                 ▼
+        WOM Planning Engine
+        (Lot-based PSI Simulation)
+                 │
+                 │
+                 ▼
+        Hybrid Push–Pull Network
+
+     Inbound Supply (PUSH)
+           Suppliers
+               ↓
+          Manufacturing (MOM)
+               ↓
+         Distribution (DAD)
+               ↓ PUSH
+       Decoupling Stock Point
+               ↓ PULL
+           Market Nodes
+
+                 │
+                 ▼
+        Explainable Planning Results
+
+WOM — Weekly Operation Model
+Lot-based Supply Chain Planning Engine
+
+---
+
 WOM (Weekly Operation Model) is a **lot-based supply chain planning engine** designed to simulate global production, logistics, and demand fulfillment using deterministic planning logic.
 
 Unlike traditional planning systems that operate on scalar quantities, WOM operates on **LOT_ID objects**.
