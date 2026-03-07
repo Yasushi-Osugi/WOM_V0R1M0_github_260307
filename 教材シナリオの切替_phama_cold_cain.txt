@@ -1,0 +1,5 @@
+copy data\pharma_cold_v0\scenarios\pharma_timeseries_baseline.csv data\pharma_cold_v0\pharma_timeseries.csv
+
+copy data\pharma_cold_v0\scenarios\pharma_timeseries_wave_mismatch.csv data\pharma_cold_v0\pharma_timeseries.csv
+
+copy data\pharma_cold_v0\scenarios\pharma_timeseries_cold_storage_bottleneck.csv data\pharma_cold_v0\pharma_timeseries.csv

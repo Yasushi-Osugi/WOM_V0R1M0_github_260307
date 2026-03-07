@@ -1,0 +1,873 @@
+250511QA_planning_engine_refactoring
+
+
+�����₠�肪�Ƃ��������܂��I�吙�l���J������"Global Weekly PSI Planner"�̃R�[�h�Ɋւ�����_�ƃ��t�@�N�^�����O�̕������ɂ��āA���ɏڍׂȐ��������������܂����B�ȉ��̖��_�𒆐S�ɁA��̓I�ȃA�h�o�C�X��񋟂��܂��F
+
+1. **`self`�̎g�������ɂ�鍬��**�i`PSIPlannerApp`�N���X��`Node`�N���X��`self`�̈Ⴂ�ɂ��R�[�h�̕��G���j
+2. **�N���X���\�b�h vs �O���֐�**�i�ǂ����I�Ԃׂ����A����������⏈�����x�ւ̉e���j
+3. **���t�@�N�^�����O�̕�����**�i`planning engine`�����̐����A�ė��p���̌���A���ʂ��̗ǂ��j
+
+�ȉ��A���Ԃɉ񓚂��A�K�v�ɉ����ċ�̓I�ȃR�[�h��⃊�t�@�N�^�����O�̒�Ă��s���܂��B
+
+---
+
+### 1. `self`�̎g�������ɂ�鍬���̉���
+
+#### ���̐���
+- `PSIPlannerApp`�N���X�iGUI���j��`Node`�N���X�i�f�[�^�\�����j��`self`���قȂ�N���X�̃C���X�^���X���w�����߁A�R�[�h��ǂ񂾂�f�o�b�O�����肷��ۂɍ�����������B
+- �Ⴆ�΁A`self.demand_planning()`��`PSIPlannerApp`�̃��\�b�h�ŁA`self`��`PSIPlannerApp`�̃C���X�^���X���w���B����A`calcPS2I4demand`��`Node`�N���X�̃��\�b�h�ŁA`self`��`Node`�̃C���X�^���X���w���B
+- ���̂悤�ȈقȂ�N���X��`self`�����݂���ƁA�ǂ�`self`�������w���Ă���̂��ǐՂ���̂�����Ȃ�A�R�[�h�̉ǐ��⃁���e�i���X�����ቺ����B
+
+#### ������
+�ȉ��̃A�v���[�`�ŁA`self`�̍������y�����A�R�[�h�̍\���𐮗����邱�Ƃ��Ă��܂��F
+
+##### (1) �N���X�̐ӔC�𖾊m�ɕ���
+- **GUI�ƃ��W�b�N�̕���**�F`PSIPlannerApp`��GUI�̊Ǘ��iTkinter��Matplotlib�̕`��A���[�U�[���͂̏����j�ɓ��������A���ۂ̌v�惍�W�b�N�i`demand_planning`��`calcPS2I4demand`�Ȃǁj�͕ʂ̃N���X�i��F`PlanningEngine`�j�Ɉړ�����B
+- **�f�[�^�\���ƃ��W�b�N�̕���**�F`Node`�N���X�̓c���[�\����PSI�f�[�^�̕ێ��ɓ��������A�v�Z���W�b�N�i`calcPS2I4demand`�Ȃǁj��`PlanningEngine`��ʂ̃��[�e�B���e�B���W���[���Ɉڂ��B
+
+��F
+```python
+# planning_engine.py
+class PlanningEngine:
+    def __init__(self, root_node):
+        self.root_node = root_node
+
+    def demand_planning(self):
+        calc_all_psi2i4demand(self.root_node)
+        # ���̏����i�]���A�`��w���Ȃǁj�͂����Œ���
+
+# gui/app.py
+class PSIPlannerApp:
+    def __init__(self, root, config):
+        self.root = root
+        self.config = config
+        self.engine = PlanningEngine(root_node_outbound)  # �G���W����������
+
+    def run_demand_planning(self):
+        self.engine.demand_planning()  # �G���W���ɏ������Ϗ�
+        self.update_gui()  # GUI�X�V
+
+# tree.py
+class Node:
+    def __init__(self, name: str):
+        self.name = name
+        self.children = []
+        self.psi4demand = None  # �f�[�^�ێ��̂�
+```
+
+���̂悤�ɂ��邱�ƂŁF
+- `PSIPlannerApp`��GUI�̊Ǘ��ɏW���B
+- `PlanningEngine`�͌v�惍�W�b�N�̎��s�ɏW���B
+- `Node`�̓f�[�^�\���̕ێ��ɏW���B
+- `self`���w���C���X�^���X�̃R���e�L�X�g�����m�ɂȂ�A����������B
+
+##### (2) �ċA�����̐���
+- ���݂�`calc_all_psi2i4demand`�͊O���֐��Ƃ��Ē�`����Ă��܂����A`Node`�N���X�ɖ��ڂɊ֘A���Ă��邽�߁A�N���X���\�b�h�Ƃ��Ď������邩�A`PlanningEngine`�Ɉړ����邩���������܂��B
+- �ċA�������N���X���\�b�h�Ƃ��Ď�������ꍇ�A�ȉ��̂悤�ɂł��܂��F
+
+```python
+# tree.py
+class Node:
+    def calc_psi2i4demand(self):
+        plan_len = 53 * self.plan_range
+        for w in range(1, plan_len):
+            s = self.psi4demand[w][0]
+            co = self.psi4demand[w][1]
+            i0 = self.psi4demand[w - 1][2]
+            p = self.psi4demand[w][3]
+            i1 = i0 + p - s  # �ȗ��������v�Z��
+            self.psi4demand[w][2] = i1
+
+    def apply_psi2i4demand(self):
+        self.calc_psi2i4demand()
+        for child in self.children:
+            child.apply_psi2i4demand()
+```
+
+- ����ɂ��A`calc_all_psi2i4demand`�̂悤�ȊO���֐���r�����A�c���[�̃g���o�[�T����`Node`�N���X���Ŋ��������邱�Ƃ��ł��܂��B
+
+##### (3) ���O��Ԃ̐���
+- `self`�̍�����h�����߁A�ϐ����⃁�\�b�h������薾�m�ɂ���B�Ⴆ�΁A`self.root_node_outbound`��`self.outbound_root`�ɕύX����ȂǁA��������ڂł킩�閼�O�ɂ���B
+- �܂��A`psi4demand`�̂悤�Ȗ��O�́APSI�iPlan, Supply, Inventory�j�̂ǂ̕������w���̂��s���m�Ȃ̂ŁA`demand_psi`��`supply_psi`�̂悤�ɖ����𖾎����閼�O�ɕύX����B
+
+---
+
+### 2. �N���X���\�b�h vs �O���֐��̑I��
+
+#### ���̐���
+- �����@�\�i��F`calcPS2I4demand`�j���N���X���\�b�h�Ƃ��Ď������邩�A�O���֐��Ƃ��Ď������邩�Ŗ����Ă���B
+- Python�̎d�l��A����������⏈�����x�ɂǂ̂悤�ȉe��������̂��m�肽���B
+
+#### �N���X���\�b�h�ƊO���֐��̔�r
+�ȉ��ɁA���҂̈Ⴂ��Python�̎d�l�Ɋ�Â��Ĕ�r���܂��F
+
+##### (1) �N���X���\�b�h
+- **�����b�g**�F
+  - �N���X�ɖ��ڂɊ֘A���郍�W�b�N���J�v�Z�����ł���i�I�u�W�F�N�g�w���̌����ɓK���j�B
+  - `self`��ʂ��ăC���X�^���X�̏�ԁi��F`self.psi4demand`�j�ɒ��ڃA�N�Z�X�\�B
+  - �R�[�h�̃R���e�L�X�g�����m�i�ǂ̃N���X�ɑ����邩����ڗđR�j�B
+- **�f�����b�g**�F
+  - �C���X�^���X��n���K�v������i��F`node.calcPS2I4demand()`�j�B
+  - �N���X�Ɉˑ����邽�߁A�ėp�����Ⴂ�i���̃N���X��R���e�L�X�g�ōė��p���ɂ����j�B
+- **�������Ƒ��x**�F
+  - ���\�b�h�̓N���X��`�̈ꕔ�Ƃ��ĕۑ�����邪�A�C���X�^���X���ƂɃ��\�b�h�̃R�s�[�͍쐬����Ȃ��i�N���X���x���ŋ��L�j�B
+  - �Ăяo������`self`��n���I�[�o�[�w�b�h�����邪�APython�̒ʏ�̃��[�X�P�[�X�ł͖����ł��郌�x���B
+
+##### (2) �O���֐�
+- **�����b�g**�F
+  - �ėp���������i�ǂ̃N���X�ɂ��ˑ������A�C�ӂ̃I�u�W�F�N�g�ɓK�p�\�j�B
+  - ���W���[�������₷���i���[�e�B���e�B���W���[���ɂ܂Ƃ߂čė��p�\�j�B
+  - �V���v���ȏ����ł͋L�q�ʂ����Ȃ��B
+- **�f�����b�g**�F
+  - ��Ԃ𒼐ڑ���ł��Ȃ����߁A�����Ńf�[�^�𖾎��I�ɓn���K�v������i��F`calc_all_psi2i4demand(node)`�j�B
+  - �R�[�h�̃R���e�L�X�g���s���m�ɂȂ�₷���i�ǂ̃N���X��f�[�^�\���Ɉˑ�����̂��킩��ɂ����j�B
+- **�������Ƒ��x**�F
+  - �֐��̓��W���[�����x���Œ�`����A�C���X�^���X�Ɉˑ����Ȃ����߁A����������͂قړ����B
+  - �Ăяo�����̃I�[�o�[�w�b�h�̓N���X���\�b�h�Ƃقړ����iPython�̊֐��Ăяo���R�X�g�͒Ⴂ�j�B
+
+##### Python�̎d�l�Ɋ�Â��e��
+- **����������**�F�N���X���\�b�h���O���֐����APython�̃I�u�W�F�N�g���f���ł͑傫�ȍ��͂Ȃ��B�ǂ�����R�[�h�I�u�W�F�N�g�Ƃ��ă������ɕۑ�����A�Ăяo�����ɓ��I�ɉ��������B�C���X�^���X�ϐ��i��F`self.psi4demand`�j�̃���������́A�ǂ����I��ł��ς��Ȃ��B
+- **�������x**�F�N���X���\�b�h��`self`�����⃁�\�b�h�f�B�X�p�b�`�̃I�[�o�[�w�b�h�͔����i�i�m�b�I�[�_�[�j�B�O���֐��̈����n�������l�Ɍy�ʁB7,000�X�e�b�v�̃R�[�h�x�[�X�ł́A���̗v���i��F���[�v�̌����A�f�[�^�\���̑I���j�����x�ɑ傫���e������B
+- **�����e�i���X��**�F�N���X���\�b�h�͊֘A����f�[�^�ƃ��W�b�N���܂Ƃ߂邽�߁A��K�̓v���W�F�N�g�ł͉ǐ��ƕێ琫�����シ��B�O���֐��̓��[�e�B���e�B�֐��Ƃ��ēK�؂����A��ԊǗ������U���₷���A�o�O�̌����ɂȂ蓾��B
+
+#### ����
+�ȉ��̃K�C�h���C���Ŏ������@��I�Ԃ��Ƃ������߂��܂��F
+- **�N���X���\�b�h��I�ԏꍇ**�F
+  - ���W�b�N������̃N���X�i��F`Node`�j�̏�Ԃɋ����ˑ�����ꍇ�B
+  - �I�u�W�F�N�g�w���̐݌v���d�����A�f�[�^�ƐU�镑�����J�v�Z�����������ꍇ�B
+  - ��F`Node.calc_psi2i4demand`��`Node`��`psi4demand`�𒼐ڑ��삷�邽�߁A�N���X���\�b�h�����R�B
+- **�O���֐���I�ԏꍇ**�F
+  - ���W�b�N���ėp�I�ŁA�����̃N���X��R���e�L�X�g�ōė��p�\�ȏꍇ�B
+  - ��Ԃ�ύX�����A�����Ȍv�Z��ϊ����s���ꍇ�B
+  - ��F`calc_all_psi2i4demand`�̓c���[�̃g���o�[�T����ėp�I�ɍs���Ȃ�A���[�e�B���e�B�֐��Ƃ��Ď����\�B
+
+��̗�F
+```python
+# utils.py�i�O���֐��Ƃ��Ď����j
+def traverse_and_calc_psi(node):
+    node.calc_psi2i4demand()
+    for child in node.children:
+        traverse_and_calc_psi(child)
+
+# tree.py�i�N���X���\�b�h�Ƃ��Ď����j
+class Node:
+    def calc_psi2i4demand(self):
+        # �����̃��W�b�N
+        plan_len = 53 * self.plan_range
+        for w in range(1, plan_len):
+            # ...
+```
+
+���̏ꍇ�A�g���o�[�T�����W�b�N��`utils.py`�̊O���֐��Ƃ��ĕ������A�X�̃m�[�h�̌v�Z��`Node`�̃N���X���\�b�h�Ƃ��ĕێ���������A���������m�ōė��p���������ł��B
+
+---
+
+### 3. ���t�@�N�^�����O�̕�����
+
+#### �S�̖̂ڕW
+- **���ʂ��̗ǂ�**�F�R�[�h�̖����𖾊m�ɂ��A�֐���N���X�̐ӔC��P�ꉻ�B
+- **�ė��p��**�F���W�b�N�����W���[�������A���̃v���W�F�N�g��@�\�Ŏg���₷������B
+- **�ێ琫**�F�R�����g��h�L�������g���[�������A�f�o�b�O��e�Ղɂ���B
+
+#### ��̓I�ȃ��t�@�N�^�����O��
+1. **���W���[������**�F
+   - ���݂̃R�[�h���ȉ��̂悤�ɕ�������F
+     - `gui/`�FGUI�֘A�i`app.py`�j
+     - `engine/`�F�v�惍�W�b�N�i`planning_engine.py`�j
+     - `model/`�F�f�[�^�\���i`tree.py`�j
+     - `utils/`�F�ėp���[�e�B���e�B�i`utils.py`�j
+   - ��F
+     ```
+     project/
+     ������ gui/
+     ��   ������ app.py
+     ������ engine/
+     ��   ������ planning_engine.py
+     ������ model/
+     ��   ������ tree.py
+     ������ utils/
+     ��   ������ utils.py
+     ������ main.py
+     ```
+
+2. **�ˑ��֌W�̐���**�F
+   - `PSIPlannerApp`��`Node`��v�惍�W�b�N�ɒ��ڈˑ����Ȃ��悤�ɁA`PlanningEngine`�𒇉�҂Ƃ��Ďg�p�B
+   - �ˑ������iDependency Injection�j�𗘗p���āA�ݒ��f�[�^�𖾎��I�ɓn���B
+
+3. **�����K���̓���**�F
+   - �֐�����ϐ�����PEP 8�ɏ���������i��F`calcPS2I4demand` �� `calc_psi_to_inventory_for_demand`�j�B
+   - PSI�̖����iPlan, Supply, Inventory�j�𖾊m�ɂ��閽�����̗p�B
+
+4. **�R�����g�ƃh�L�������g�̏[��**�F
+   - �e�֐��⃁�\�b�h��Docstring��ǉ��B
+   - ��F
+     ```python
+     def calc_psi2i4demand(self):
+         """
+         Calculate PSI (Plan, Supply, Inventory) for demand planning.
+         Updates self.psi4demand based on forward planning logic.
+         """
+         plan_len = 53 * self.plan_range
+         # ...
+     ```
+
+5. **�p�t�H�[�}���X�œK��**�F
+   - ���X�g����i��F`diff_list = [x for x in work if x not in s]`�j�́A�f�[�^�ʂ������ꍇ�ɔ�����B�Z�b�g����i`set(work) - set(s)`�j��NumPy���g�p����B
+   - ��F
+     ```python
+     import numpy as np
+
+     def calc_psi2i4demand(self):
+         plan_len = 53 * self.plan_range
+         psi = np.array(self.psi4demand)
+         for w in range(1, plan_len):
+             s, co, i0, p = psi[w, 0], psi[w, 1], psi[w-1, 2], psi[w, 3]
+             psi[w, 2] = i0 + p - s
+         self.psi4demand = psi.tolist()
+     ```
+
+6. **�e�X�g�̓���**�F
+   - ���W�b�N���ƂɒP�̃e�X�g�������A���t�@�N�^�����O������삪�ۏ؂����悤�ɂ���B
+   - ��F`unittest`��`pytest`���g�p���āA`calc_psi2i4demand`�̌��ʂ����؁B
+
+---
+
+### ��̓I�Ȏ��̃X�e�b�v
+1. **�R�[�h�̒�**�F
+   - `app.py`��`tree.py`�̑S�̑���A`demand_planning`�Ɋ֘A���镔�������L���Ă���������΁A����̓I�ȃ��t�@�N�^�����O�Ă��Ăł��܂��B
+   - ���ɁA`self.psi4demand`�̃f�[�^�\���i���X�g�̌`�����e�j���s���Ȃ��߁A�ڍׂ��킩��ƍœK���Ă��Ă��₷���Ȃ�܂��B
+
+2. **�D�揇�ʂ̊m�F**�F
+   - �ǐ��̌���A�����������A�������x�̂ǂ���ŗD��ɂ��邩�����Ă���������΁A�d�_�I�ɃA�h�o�C�X���܂��B
+   - ��FGUI�̃��X�|���X���x���d������Ȃ�A�񓯊������i`asyncio`��`threading`�j�̓����������\�B
+
+3. **����p�R�[�h�̒�**�F
+   - �����ȃv���g�^�C�v�i��F`Node`�N���X��`PlanningEngine`�N���X�̃T���v���j���쐬���A����m�F���Ȃ��烊�t�@�N�^�����O��i�߂邱�Ƃ������߂��܂��B
+
+---
+
+### �܂Ƃ�
+- **`self`�̍���**�FGUI�A���W�b�N�A�f�[�^�\���𕪗����A�N���X�̐ӔC�𖾊m���B`PlanningEngine`�N���X�̓����Ŗ����𐮗��B
+- **�N���X���\�b�h vs �O���֐�**�F��ԂɈˑ����郍�W�b�N�̓N���X���\�b�h�A�ėp�I�ȏ����͊O���֐��B�������⑬�x�̍��͏��������A�ǐ��ƕێ琫��D��B
+- **���t�@�N�^�����O**�F���W���[�������A��������A�R�����g�[���ANumPy���p�Ō������B
+
+�K�v�ł���΁A��̓I�ȃR�[�h�����L�����������A����̕����i��F`calcPS2I4demand`�̍œK���j�ɏœ_���i�������������������΁A����ɏڍׂȎx�����\�ł��I�吙�l�̃v���W�F�N�g�̐�����S��艞�����Ă���܂��I
+
+
+
+
+- Inbound_DmBw(self):
+- Inbound_SpFw(self):
+- canvas_psi(self):
+- cashflow_out_in_net(self):
+
+- demand_leveling(self):
+- demand_planning(self):
+- eval_buffer_stock(self):
+
+- inbound_lot_by_lot_to_csv(self):
+- inbound_psi_to_csv(self):
+- load_data_files(self):
+- load_from_directory(self):
+- lot_cost_structure_to_csv(self):
+
+- on_exit(self):
+
+- optimize_network(self):
+
+- outbound_lot_by_lot_to_csv(self):
+- outbound_psi_to_csv(self):
+- psi_for_excel(self):
+- psi_price4cf(self):
+- save_to_directory(self):
+- scrollbar(self):
+- show_3d_overview(self):
+- show_cost_stracture_bar_graph(self):
+- show_month_data_csv(self):
+- show_revenue_profit(self):
+
+- supply_planning(self):
+- supplychain_performance_to_csv(self):
+
+
+# PySI Planning Engines
+
+# �����l��ݒ� ��s���Y�̏T��
+        self.pre_proc_LT_entry.insert(0, str(self.config.DEFAULT_PRE_PROC_LT))  
+# outbound
+self.demand_planning   
+self.demand_leveling   
+self.supply_planning   
+
+self.eval_buffer_stock 
+self.optimize_network  
+
+# inbound
+self.Inbound_DmBw      
+self.Inbound_SpFw      
+
+
+
+# Planning Engine
+
+    def demand_planning(self):
+        # Implement forward planning logic here
+        print("Forward planning executed.")
+
+        #@240903@241106
+        calc_all_psi2i4demand(self.root_node_outbound)
+
+        self.update_evaluation_results()
+
+        #@241212 add
+        self.decouple_node_selected = []
+        self.view_nx_matlib()
+
+        self.root.after(1000, self.show_psi("outbound", "demand"))
+
+
+
+# ****************************
+# PSI planning demand
+# ****************************
+def calc_all_psi2i4demand(node):
+
+    node.calcPS2I4demand()
+
+    for child in node.children:
+
+        calc_all_psi2i4demand(child)
+
+
+
+
+    # ******************************
+    # in or out    : root_node_outbound
+    # plan layer   : demand layer
+    # node order   : preorder # Leaf2Root
+    # time         : Foreward
+    # calculation  : PS2I
+    # ******************************
+
+    def calcPS2I4demand(self):
+
+        # psiS2P = self.psi4demand # copy�����ɁA���ڂ����
+
+        plan_len = 53 * self.plan_range
+        # plan_len = len(self.psi4demand)
+
+        for w in range(1, plan_len):  # starting_I = 0 = w-1 / ending_I =plan_len
+            # for w in range(1,54): # starting_I = 0 = w-1 / ending_I = 53
+
+            s = self.psi4demand[w][0]
+            co = self.psi4demand[w][1]
+
+            i0 = self.psi4demand[w - 1][2]
+            i1 = self.psi4demand[w][2]
+
+            p = self.psi4demand[w][3]
+
+            # *********************
+            # # I(n-1)+P(n)-S(n)
+            # *********************
+
+            work = i0 + p  # �O�T�݌ɂƓ��T���ו� availables
+
+            # �����ŁA�����̍݌ɁAS�o��=����𑀍삵�Ă���
+            # S�o��=����𖾎��I��log�ɂ��āA����Ƃ��ċL�^���A�\�����鏈��
+            # �o�ׂ��ꂽS=����A�݌�I�A���o��CO�̏W���𐳂����\������
+
+            # ���m�������ɑ���u�� #@240909�R���ł͂Ȃ���S����
+
+            diff_list = [x for x in work if x not in s]  # I(n-1)+P(n)-S(n)
+
+            self.psi4demand[w][2] = i1 = diff_list
+
+
+
+
+    # Demand Leveling logic here
+    def demand_leveling(self):
+        print("Demand Leveling executed.")
+
+
+        # *********************************
+        # Demand LEVELing on shipping yard / with pre_production week
+        # *********************************
+
+        year_st  = 2020
+        year_end = 2021
+
+        year_st  = self.plan_year_st
+        year_end = year_st + self.plan_range - 1
+
+        pre_prod_week = self.pre_proc_LT
+
+
+        # root_node_outbound��supply��"S"�݂̂𕽏������Đ������Ă���
+        demand_leveling_on_ship(self.root_node_outbound, pre_prod_week, year_st, year_end)
+
+
+        # root_node_outbound��supply��"PSI"�𐶐����Ă���
+        ##@241114 KEY CODE
+        self.root_node_outbound.calcS2P_4supply()  #mother plant��confirm S=> P
+        self.root_node_outbound.calcPS2I4supply()  #mother plant��PS=>I
+
+
+        #@241114 KEY CODE
+        # ***************************************
+        # ����3�@�s�x��parent search�����s setPS_on_ship2node
+        # ***************************************
+        feedback_psi_lists(self.root_node_outbound, self.nodes_outbound)
+
+
+
+        self.update_evaluation_results()
+
+        # PSI�v��̏�����Ԃ��o�b�N�A�b�v
+        self.psi_backup_to_file(self.root_node_outbound, 'psi_backup.pkl')
+
+        self.view_nx_matlib()
+
+        self.root.after(1000, self.show_psi("outbound", "supply"))
+
+
+
+    # +++++++++++++++++++++++++++++++++++++++++++++++
+    # Mother Plant demand leveling 
+    # +++++++++++++++++++++++++++++++++++++++++++++++
+def demand_leveling_on_ship(root_node_outbound, pre_prod_week, year_st, year_end):
+
+    # input: root_node_outbound.psi4demand
+    #        pre_prod_week =26 
+    #
+    # output:root_node_outbound.psi4supply
+
+    plan_range = root_node_outbound.plan_range
+
+
+    #@241114
+    # �����o�����X�̖��́A�ЂƂ�̃l�b�g���[�N�S�̂�optimize�ŉ���
+
+    # ���b�g�P�ʂŋ�����ω������āAweight=���b�g(CPU_profit)���v��simulate
+    # �ݔ������̉�����Ԃ�����
+
+    # ����>=���v�Ȃ�I�y���[�V�������
+    # ����<���v�Ȃ狟���z���ƃI�y���[�V�������
+
+    # optimise�ŁA���[�g�Ɨʂ�����
+    # PSI�ŁAoperation revenue cost profit���Z�� business �]��
+
+    # �ƊENo1/2/3�̋����헪��simulate���āAbusiness�]������
+
+
+    # node_psi_dict_Ot4Dm�ł́A���[�s���leafnode�̂݃Z�b�g
+    #
+    # root_node��S psi_list[w][0]�ɁAleveling���ꂽ�m��o��S_confirm_list���Z�b    �g
+
+    # �N�Ԃ̑����v(��lots)��N�T��s�Ő��Y����B
+    # �Ⴆ�΁A�R������s��13�T��s���Y�Ƃ��āA�N�ԑ����v���T���ςɂ���B
+
+    # S�o�ׂŕ��������āAconfirmedS-I-P
+    # conf_S����conf_P�𐶐����āAconf_P-S-I  PUSH and PULL
+
+    S_list = []
+    S_allocated = []
+
+    year_lots_list = []
+    year_week_list = []
+
+    leveling_S_in = []
+
+    leveling_S_in = root_node_outbound.psi4demand
+
+    # psi_list����S_list�𐶐�����
+    for psi in leveling_S_in:
+
+        S_list.append(psi[0])
+
+    # �J�n�N���擾����
+    plan_year_st = year_st  # �J�n�N�̃Z�b�g in main()�v�C��
+
+    for yyyy in range(plan_year_st, plan_year_st + plan_range + 1):
+
+        year_lots = count_lots_yyyy(S_list, str(yyyy))
+
+        year_lots_list.append(year_lots)
+
+    #        # ���ʂ��o��
+    #       #print(yyyy, " year carrying lots:", year_lots)
+    #
+    #    # ���ʂ��o��
+    #   #print(" year_lots_list:", year_lots_list)
+
+    # an image of sample data
+    #
+    # 2023  year carrying lots: 0
+    # 2024  year carrying lots: 2919
+    # 2025  year carrying lots: 2914
+    # 2026  year carrying lots: 2986
+    # 2027  year carrying lots: 2942
+    # 2028  year carrying lots: 2913
+    # 2029  year carrying lots: 0
+    #
+    # year_lots_list: [0, 2919, 2914, 2986, 2942, 2913, 0]
+
+    year_list = []
+
+    for yyyy in range(plan_year_st, plan_year_st + plan_range + 1):
+
+        year_list.append(yyyy)
+
+        # �e�X�g�p�̔N���w��
+        year_to_check = yyyy
+
+        # �w�肳�ꂽ�N��ISO�T�����擾
+        week_count = is_52_or_53_week_year(year_to_check)
+
+        year_week_list.append(week_count)
+
+    #        # ���ʂ��o��
+    #       #print(year_to_check, " year has week_count:", week_count)
+    #
+    #    # ���ʂ��o��
+    #   #print(" year_week_list:", year_week_list)
+
+    # print("year_list", year_list)
+
+    # an image of sample data
+    #
+    # 2023  year has week_count: 52
+    # 2024  year has week_count: 52
+    # 2025  year has week_count: 52
+    # 2026  year has week_count: 53
+    # 2027  year has week_count: 52
+    # 2028  year has week_count: 52
+    # 2029  year has week_count: 52
+    # year_week_list: [52, 52, 52, 53, 52, 52, 52]
+
+
+    # *****************************
+    # ���Y�������̂��߂̔N�Ԃ̏T���ϐ��Y��(���b�g���P��)
+    # *****************************
+
+    # *****************************
+    # make_year_average_lots
+    # *****************************
+    # year_list     = [2023,2024,2025,2026,2027,2028,2029]
+
+    # year_lots_list = [0, 2919, 2914, 2986, 2942, 2913, 0]
+    # year_week_list = [52, 52, 52, 53, 52, 52, 52]
+
+    year_average_lots_list = []
+
+    for lots, weeks in zip(year_lots_list, year_week_list):
+
+        average_lots_per_week = math.ceil(lots / weeks)
+
+        year_average_lots_list.append(average_lots_per_week)
+
+
+    # print("year_average_lots_list", year_average_lots_list)
+    #
+    # an image of sample data
+    #
+    # year_average_lots_list [0, 57, 57, 57, 57, 57, 0]
+
+    # �N�Ԃ̑����v(��lots)��N�T��s�Ő��Y����B
+    # �Ⴆ�΁A�R������s��13�T��s���Y�Ƃ��āA�N�ԑ����v���T���ςɂ���B
+
+    #
+    # ���̓f�[�^�̑O��
+    #
+    # leveling_S_in[w][0] == S_list�́Aoutbound��demand_plan�ŁA
+    # �}�U�[�v�����g�̏o�׃|�W�V������S�ŁA
+    # 5�N�� �T�� �ŏI�s��ɂ�����lot_id���X�g��
+    # LT offset���ꂽ��Ԃœ����Ă���
+    #
+    # year_list     = [2023,2024,2025,2026,2027,2028,2029]
+
+    # year_lots_list = [0, 2919, 2914, 2986, 2942, 2913, 0]
+    # year_week_list = [52, 52, 52, 53, 52, 52, 52]
+    # year_average_lots_list [0, 57, 57, 57, 57, 57, 0]
+
+    # ********************************
+    # ��s���Y�̏T��
+    # ********************************
+    # precedence_production_week =13
+
+    pre_prod_week =26 # 26�T=6�����̐�s���Y���Z�b�g
+    # pre_prod_week =13 # 13�T=3�����̐�s���Y���Z�b�g
+    # pre_prod_week = 6  # 6�T=1.5�����̐�s���Y���Z�b�g
+
+    # ********************************
+    # ��s���Y�̊J�n�T�����߂�
+    # ********************************
+    # �s�꓊���̑O�N�ɂ����� i= 0  year_list[i]           # 2023
+    # �s�꓊���̑O�N��ISO�T�̐� year_week_list[i]         # 52
+
+    # ��s���Y�̊J�n�T�́A�s�꓊���̑O�N��ISO�T�̐� - ��s���Y�T
+
+    pre_prod_start_week = 0
+
+    i = 0
+
+    pre_prod_start_week = year_week_list[i] - pre_prod_week
+
+    # �X�^�[�g�T�̑O�T�܂ŁA[]���X�g�Ŗ��߂Ă���
+    for i in range(pre_prod_start_week):
+        S_allocated.append([])
+
+    # ********************************
+    # �ŏI�s�ꂩ���LT offset���ꂽ�o�חv��lot_id���X�g��
+    # Allocate demand to mother plant weekly slots
+    # ********************************
+
+    # S_list�̏T��lot_id���X�g���꒼����lot_id���X�g�ɕϊ�����
+    # mother plant weekly slots
+
+    # �󃊃X�g�𖳎����āA�꒼����lot_id���X�g�ɕϊ�
+
+    # �󃊃X�g�����O���Ĉ�̃��X�g�Ɍ������鏈��
+    S_one_list = [item for sublist in S_list if sublist for item in sublist]
+
+    ## ���ʕ\��
+    ##print(S_one_list)
+
+    # to be defined ���N�̒萔�ł�lot_id�̐؂�o��
+
+    # listB�̊e�v�f�Ŏw�肳�ꂽ������listA����v�f��؂�o����
+    # �V�������X�glistC���쐬
+
+    listA = S_one_list  # 5�N����lot_id���X�g
+
+    listB = year_lots_list  # ���N���̑����b�g��
+
+    listC = []  # ���N��lot_id���X�g
+
+    start_idx = 0
+
+    for i, num in enumerate(listB):
+
+        end_idx = start_idx + num
+
+        # original sample
+        # listC.append(listA[start_idx:end_idx])
+
+        # **********************************
+        # "slice" and "allocate" at once
+        # **********************************
+        sliced_lots = listA[start_idx:end_idx]
+
+        # ���T�̐��Y�g�́Ayear_average_lots_list�̕��ϒl���擾����B
+        N = year_average_lots_list[i]
+
+        if N == 0:
+
+            pass
+
+        else:
+
+            # ���̔N�̏T���̏o�ח\�萔�����������B
+            S_alloc_a_year = [
+                sliced_lots[j : j + N] for j in range(0, len(sliced_lots), N)
+            ]
+
+            S_allocated.extend(S_alloc_a_year)
+            # S_allocated.append(S_alloc_a_year)
+
+        start_idx = end_idx
+
+    ## ���ʕ\��
+    # print("S_allocated", S_allocated)
+
+    # set psi on outbound supply
+
+    # "JPN-OUT"
+    #
+
+
+    # ***********************************************
+    #@241113 CHANGE root_node_outbound.psi4supply�����݂���Ƃ����O��
+    # ***********************************************
+    #
+    #node_name = root_node_outbound.name  # Node����node_name����o��
+    #
+    ## for w, pSi in enumerate( S_allocated ):
+    ##
+    ##    node_psi_dict_Ot4Sp[node_name][w][0] = pSi
+    
+    for w in range(53 * plan_range):
+
+        if w <= len(S_allocated) - 1:  # index=0 start
+
+            root_node_outbound.psi4supply[w][0] = S_allocated[w]
+            #node_psi_dict_Ot4Sp[node_name][w][0] = S_allocated[w]
+
+        else:
+
+            root_node_outbound.psi4supply[w][0] = []
+            #node_psi_dict_Ot4Sp[node_name][w][0] = []
+
+    # +++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+
+
+
+    def supply_planning(self):
+        # Check if the necessary data is loaded
+        if self.root_node_outbound is None or self.nodes_outbound is None:
+            print("Error: PSI Plan data is not loaded. Please load the data first.")
+            tk.messagebox.showerror("Error", "PSI Plan data is NOT loaded. please File Open parameter directory first.")
+            return
+    
+        # Implement forward planning logic here
+        print("Supply planning with Decoupling points")
+    
+        # Restore PSI data from a backup file
+        self.root_node_outbound = self.psi_restore_from_file('psi_backup.pkl')
+    
+        if self.decouple_node_selected == []:
+            # Search nodes_decouple_all[-2], that is "DAD" nodes
+            nodes_decouple_all = make_nodes_decouple_all(self.root_node_outbound    )
+            print("nodes_decouple_all", nodes_decouple_all)
+    
+            # [-2] will be "DAD" node, the point of Delivery and Distribution
+            decouple_node_names = nodes_decouple_all[-2]
+        else:
+            decouple_node_names = self.decouple_node_selected
+    
+        # Perform supply planning logic
+        push_pull_all_psi2i_decouple4supply5(
+            self.root_node_outbound, decouple_node_names
+        )
+    
+        # Evaluate the results
+        self.update_evaluation_results()
+    
+    
+        #@250218 STOP
+        ## Cash OUT/IN
+        #self.cash_flow_print()
+    
+    
+    
+        # Update the network visualization
+        self.decouple_node_selected = decouple_node_names
+        self.view_nx_matlib4opt()
+    
+        # Update the PSI area
+        self.root.after(1000, self.show_psi("outbound", "supply"))
+    
+    
+# *****************************************************
+# following " self" is 
+# *****************************************************
+
+
+
+
+    def calcPS2I4supply(self): # this "self" is an instance of class "Node"
+
+        # psiS2P = self.psi4demand # copy�����ɁA���ڂ����
+
+        plan_len = 53 * self.plan_range
+        # plan_len = len(self.psi4supply)
+
+        for w in range(1, plan_len):  # starting_I = 0 = w-1 / ending_I =plan_len
+            # for w in range(1,54): # starting_I = 0 = w-1 / ending_I = 53
+
+            s = self.psi4supply[w][0]
+            co = self.psi4supply[w][1]
+
+            i0 = self.psi4supply[w - 1][2]
+            i1 = self.psi4supply[w][2]
+
+            p = self.psi4supply[w][3]
+
+            # *********************
+            # # I(n-1)+P(n)-S(n)
+            # *********************
+
+            work = i0 + p  # �O�T�݌ɂƓ��T���ו� availables
+
+            # memo �����ŁA�����̍݌ɁAS�o��=����𑀍삵�Ă���
+            # S�o��=����𖾎��I��log�ɂ��āA����Ƃ��ċL�^���A�\�����鏈��
+            # �o�ׂ��ꂽS=����A�݌�I�A���o��CO�̏W���𐳂����\������
+
+            # ���m�������ɑ���u��
+
+            diff_list = [x for x in work if x not in s]  # I(n-1)+P(n)-S(n)
+
+            self.psi4supply[w][2] = i1 = diff_list
+
+            # ************************************
+            # probare a lot checking process
+            # ************************************
+            
+            #@STOP
+            #if self.name == "MUC_N":
+            #
+            #    if w in [53,54,55,56,57]:
+            #
+            #        print("s, co, i0, i1, p ", w )
+            #        print("s" , w, s )
+            #        print("co", w, co)
+            #        print("i0", w, i0)
+            #        print("i1", w, i1)
+            #        print("p" , w, p )
+
+
+
+
+def PUSH_process(node):
+
+
+    # ***************
+    # decoupl node�ɓ����čŏ���calcPS2I�ŏ�Ԃ𐮂���
+    # ***************
+    node.calcPS2I4supply()  # calc_psi with PULL_S
+
+
+    print(f"PUSH_process applied to {node.name}")
+
+
+
+
+def push_pull_all_psi2i_decouple4supply5(node, decouple_nodes):
+
+    if node.name in decouple_nodes:
+
+        # ***************
+        # decoupl node�ɓ����čŏ���calcPS2I�ŏ�Ԃ𐮂���
+        # ***************
+        node.calcPS2I4supply()  # calc_psi with PULL_S
+
+
+        #@241002 decoupling node�̂�pullS�Ŋm��ship
+        # *******************************************
+        # decouple node�́Apull_S�ŏo�׎w������
+        # *******************************************
+        copy_S_demand2supply(node)
+
+        PUSH_process(node)         # supply SP2I���Ă����
+
+        apply_pull_process(node)   # demandS�ɐ؂�ւ�
+
+    else:
+
+        PUSH_process(node)
+
+        for child in node.children:
+
+            push_pull_all_psi2i_decouple4supply5(child, decouple_nodes)
+
+
