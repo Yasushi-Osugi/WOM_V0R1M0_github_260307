@@ -12,6 +12,33 @@ Its purpose is to help:
 understand where the core logic lives and how the main modules interact.
 
 ---
+                 WOM ENGINE
+
+           ┌───────────────────┐
+           │     Scenario      │
+           └────────┬──────────┘
+                    │
+                    ▼
+           ┌───────────────────┐
+           │     Network       │
+           └────────┬──────────┘
+                    │
+                    ▼
+           ┌───────────────────┐
+           │ Planning Pipeline │
+           └────────┬──────────┘
+                    │
+          ┌─────────┼─────────┐
+          ▼         ▼         ▼
+       Plugins     PSI      Cost
+                   Engine   Model
+                    │
+                    ▼
+           ┌───────────────────┐
+           │ Visualization / IO│
+           └───────────────────┘
+
+---
 
 # 1 Top-Level View
 
