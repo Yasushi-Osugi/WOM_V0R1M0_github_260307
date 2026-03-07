@@ -1,332 +1,309 @@
 # WOM Architecture
 
-## Overview
+This document describes the architecture of WOM (Weekly Operation Model).
 
-WOM (Weekly Operation Model) is a Python-based simulation and planning environment designed to model global supply chain operations.
+WOM is designed as a modular planning platform capable of supporting:
 
-The system focuses on **Weekly PSI planning**:
+- global supply chain planning
+- scenario simulation
+- AI-assisted planning
+- future economic system modeling
 
-- Production / Purchase
-- Ship / Sales
-- Inventory
+The architecture follows the principles defined in:
 
-The model represents multi-layer supply chains including:
+- WOM_DESIGN_PRINCIPLES.md
+- DEV_ROADMAP.md
+- AI_TEAM.md
+- AI_MEETING_PROTOCOL.md
 
-- inbound supply chain (materials → production)
-- outbound supply chain (production → market)
+---
 
-The architecture is designed to support:
+# 1 Architectural Overview
 
-- simulation
-- scenario analysis
-- cost / price evaluation
-- capacity constraints
-- plugin-based planning extensions
+The WOM system consists of five major layers.
+
+
+Scenario Layer
+Network Model Layer
+Planning Pipeline
+Plugin System
+Interaction Layer
+
+
+Overall flow:
+
+
+Scenario
+↓
+Network Construction
+↓
+Planning Pipeline
+↓
+Plugin Stages
+↓
+Result Generation
+↓
+Interaction Layer
 
 
 ---
 
-# High-Level Architecture
+# 2 Scenario Layer
+
+The scenario layer defines the planning context.
+
+Responsibilities:
+
+- demand input
+- supply configuration
+- network structure
+- scenario parameters
+
+Primary locations:
 
 
-WOM architecture
-
-core planning engine
-plugin system
-network model
-scenario system
-GUI layer
-I/O and persistence layer
+data/
+examples/
+pysi/scenario/
 
 
-Each layer is implemented in the `pysi` package.
+Scenarios must be:
+
+- reproducible
+- version-controlled
+- deterministic
+
+Scenarios are used for:
+
+- development testing
+- regression validation
+- AI diagnostics
 
 ---
 
-# Core Planning Engine
+# 3 Network Model Layer
 
-Primary location:
+The network layer constructs the supply chain model.
+
+Nodes represent:
+
+- factories
+- distribution centers
+- markets
+
+Edges represent:
+
+- transport flows
+- supply relationships
+
+Primary modules:
+
+
+pysi/network/
+
+
+Responsibilities:
+
+- node creation
+- edge creation
+- capacity definitions
+- lead time modeling
+
+The network model forms the structural foundation for planning.
+
+---
+
+# 4 Planning Pipeline
+
+The planning pipeline performs the PSI planning calculation.
+
+Pipeline stages:
+
+
+Stage 1: Demand Propagation
+Stage 2: Supply Allocation
+Stage 3: Capacity Adjustment
+Stage 4: Inventory Balancing
+
+
+Pipeline flow:
+
+
+Network Model
+↓
+Demand Propagation
+↓
+Supply Allocation
+↓
+Capacity Adjustment
+↓
+Inventory Balance
+↓
+Result Generation
+
+
+Primary modules:
 
 
 pysi/plan/
 pysi/core/
 
 
-Responsibilities:
+The pipeline must remain:
 
-- PSI planning logic
-- lot-based operations
-- planning pipeline
-- validation and diagnostics
-
-Important modules:
-
-
-pysi/plan/engines.py
-pysi/plan/operations.py
-pysi/plan/validators.py
-pysi/core/pipeline.py
-pysi/core/wom_pipeline.py
-
-
-This layer contains the **main business logic of WOM**.
-
-Changes to planning behaviour should generally occur here.
+- deterministic
+- explainable
+- modular
 
 ---
 
-# Plugin System
+# 5 Plugin System
 
-Primary location:
+The plugin system enables extensible planning behavior.
+
+Plugins modify planning behavior without changing core engine logic.
+
+Plugin directory:
 
 
 pysi/plugins/
-pysi/core/plugin_loader.py
 
 
-Purpose:
+Example plugins:
 
-Extend planning logic without modifying the core engine.
+- capacity_allocator
+- demand_priority
+- inventory_buffer_control
 
-Examples of plugin functionality:
-
-- capacity allocation
-- demand allocation
-- urgency handling
-- diagnostics
-- logging
-
-Plugin structure:
+Standard plugin interface:
 
 
-pysi/plugins/<plugin_name>/plugin.py
+def apply_plugin(state, context):
+return modified_state
 
 
-Many plugin folders also contain:
-
-
-plugin_OLD.py
-plugin_BKxxxx.py
-
-
-These are historical versions and **should normally not be modified**.
+Plugin execution points are defined within the planning pipeline.
 
 ---
 
-# Network Model
+# 6 Interaction Layer
 
-Primary location:
+The interaction layer provides user access to the planning system.
 
+Two interaction modes exist.
 
-pysi/network/
-
-
-Purpose:
-
-Represent the supply chain structure.
-
-Concepts:
-
-- nodes
-- edges
-- supply relationships
-- tree structures
-
-Important files:
+Developer interaction:
 
 
-node_base.py
-tree.py
-network_factory.py
+matplotlib visualization
+debug tools
 
 
-The network layer defines how products and materials flow through the supply chain.
-
----
-
-# Scenario System
-
-Primary location:
+Business interaction:
 
 
-pysi/scenario/
-data/
-examples/
+Excel templates
+Excel dashboards
+scenario comparison sheets
 
 
-Purpose:
-
-Define planning scenarios including:
-
-- demand patterns
-- capacity
-- supply structure
-- geopolitical risk
-- baseline vs future scenarios
-
-Scenario files include:
+Preferred interaction model:
 
 
-JSON scenario definitions
-CSV data inputs
+Excel → WOM Engine → Excel
 
 
-Example datasets:
-
-
-data/pharma_cold_v0
-data/phone_v0
-data/rice_v0
-
+This provides a practical interface for business users.
 
 ---
 
-# GUI Layer
+# 7 Result Generation
 
-Primary location:
+Planning results include:
 
+- PSI time series
+- inventory levels
+- capacity utilization
+- service level metrics
 
-pysi/gui/
-pysi/app/
+Results are used for:
 
-
-Purpose:
-
-Provide interactive visualization and scenario control.
-
-Key components:
-
-
-cockpit_tk.py
-world_map_view.py
-network_viewer
-
-
-GUI functionality is intentionally separated from planning logic.
+- scenario evaluation
+- visualization
+- AI diagnostic analysis
 
 ---
 
-# I/O and Persistence Layer
+# 8 Testing and Validation
 
-Primary location:
+Planning results must be validated through reproducible scenarios.
 
-
-pysi/io/
-pysi/io_adapters/
-pysi/db/
+Example executions:
 
 
-Responsibilities:
-
-- CSV loading
-- SQL integration
-- scenario persistence
-- PSI state storage
-
-Example modules:
+python -m tools.run_phone_v0
+python -m tools.run_pharma_v0
 
 
-psi_state_io.py
-sql_bridge.py
-csv_adapter.py
-sqlite.py
+Validation checks include:
+
+- execution success
+- reproducibility
+- output stability
+
+Regression scenarios must be maintained.
+
+---
+
+# 9 Integration with AI Development Model
+
+The WOM architecture integrates with the AI development framework.
+
+Development roles:
+
+
+AI Architect
+AI Engine Developer
+AI Plugin Developer
+AI Scenario Designer
+AI Excel UX Designer
+AI Tester
+
+
+Architectural decisions are governed by:
+
+
+AI_MEETING_PROTOCOL.md
+
+
+System evolution follows:
+
+
+DEV_ROADMAP.md
 
 
 ---
 
-# Repository Entry Points
+# 10 Architectural Principles
 
-Primary execution entry points include:
+The architecture must follow these rules:
 
+Planning engine clarity is prioritized over feature complexity.
 
-main.py
-pysi/app/entry_csv.py
-pysi/app/entry_gui.py
-pysi/app/entry_sql.py
+Plugins must extend behavior without modifying core engine logic.
 
+Scenarios must remain reproducible.
 
-Developer utilities exist under:
-
-
-tools/
-
-
-Example runner scripts:
-
-
-run_phone_v0.py
-run_pharma_v0.py
-run_rice_v0.py
-
+User interaction must not introduce architectural coupling.
 
 ---
 
-# Generated Data (Not Source Code)
+# 11 Long-Term Evolution
 
-The following directories contain runtime outputs and should not be edited:
+The WOM architecture will evolve toward a planning platform capable of supporting:
 
+- global supply chain simulation
+- AI planning dialogue
+- economic network modeling
 
-out/
-plan_data/
-
-
-These are ignored by `.gitignore`.
-
----
-
-# Development Guidelines
-
-When modifying the code:
-
-Prefer editing:
-
-
-pysi/plan/
-pysi/core/
-pysi/network/
-pysi/plugins/*/plugin.py
-
-
-Avoid editing historical files:
-
-
-*_OLD.py
-_BKxxxx.py
-Untitled.py
-
-
-Unless explicitly investigating past implementations.
-
----
-
-# Design Principles
-
-1. Planning logic should remain independent of GUI code.
-2. Storage adapters should remain separate from planning logic.
-3. Plugins should extend behaviour rather than modify core code.
-4. Scenario execution should remain reproducible.
-5. Keep planning models transparent and explainable.
-
----
-
-# Future Refactoring Direction
-
-Possible improvements:
-
-- unify planning entry point
-- clarify active engine modules
-- reduce duplicate historical files
-- improve plugin lifecycle documentation
-- strengthen scenario validation
-
----
-
-# For Codex Contributors
-
-Before modifying code:
-
-1. Identify the active execution path.
-2. Confirm the target file is not a legacy version.
-3. Make minimal changes.
-4. Preserve scenario reproducibility.
-5. Document reasoning for structural changes.
+The architecture must remain stable while enabling gradual expansion.
