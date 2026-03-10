@@ -492,3 +492,240 @@ WOM is therefore best understood as:
 Planning Kernel
 for
 AI-assisted Economic and Management Systems
+
+16 Resolver and Search Architecture
+
+The WOM planning kernel includes a resolver subsystem responsible for generating and evaluating corrective planning actions.
+
+The resolver transforms diagnostic signals into candidate planning operators and determines the most appropriate corrective action.
+
+This subsystem enables WOM to function as an explainable planning and decision-support engine.
+
+16.1 Role of the Resolver
+
+The resolver sits between diagnostic detection and planning modification.
+
+Planning State
+↓
+Trust Event Detection
+↓
+Resolver
+↓
+Operator Execution
+↓
+Recalculated Planning State
+
+Responsibilities of the resolver:
+
+interpret diagnostic signals
+
+generate candidate operators
+
+simulate operator effects
+
+evaluate outcomes
+
+select an operator to apply
+
+The resolver ensures that planning modifications are systematic, explainable, and reproducible.
+
+16.2 Planning State
+
+The resolver operates on the current planning state.
+
+Planning state is derived from the flow/event model and includes:
+
+Inventory levels
+Capacity utilization
+Backlog levels
+Service levels
+Demand fulfillment status
+Financial indicators
+
+The planning state is not treated as primary data but as a derived view over flow events.
+
+16.3 Trust Event Detection
+
+Trust events represent anomalies or constraint violations detected during planning.
+
+Examples:
+
+E_INVENTORY_CAP_EXCEEDED
+E_STOCKOUT_RISK
+E_CAPACITY_OVERLOAD
+E_SUPPLY_DELAY
+
+Trust events are stored in:
+
+trust_events.json
+
+These events act as triggers for the resolver.
+
+Each trust event contains:
+
+event_type
+node
+time
+severity
+context_data
+16.4 Candidate Operator Generation
+
+For each trust event, the resolver generates possible corrective actions.
+
+These actions are called operators.
+
+Examples of operators:
+
+Increase production
+Delay shipment
+Reallocate supply
+Activate buffer inventory
+Adjust demand priority
+
+Operators are represented as structured instructions.
+
+Example operator specification:
+
+{
+  "operator": "increase_production",
+  "node": "factory_A",
+  "time": "2026-W12",
+  "quantity": 200
+}
+
+Candidate operators are stored in:
+
+operator_candidates.json
+16.5 Search Strategy
+
+The resolver explores candidate operators using a search strategy.
+
+Possible strategies include:
+
+Rule-based selection
+Greedy improvement
+Beam search
+Monte Carlo simulation
+AI-assisted heuristic search
+
+The architecture does not enforce a specific strategy.
+
+Instead, the search strategy is pluggable and extensible.
+
+This allows experimentation with different planning intelligence approaches.
+
+16.6 Simulation
+
+Each candidate operator is evaluated through simulation.
+
+Simulation involves:
+
+Apply operator
+↓
+Re-run planning pipeline
+↓
+Recompute flows
+↓
+Recalculate derived states
+
+The resulting state is then evaluated.
+
+Simulation results are stored in the run bundle for reproducibility.
+
+16.7 Evaluation Function
+
+Each simulated candidate state is evaluated using an evaluation function.
+
+Typical evaluation metrics include:
+
+Service level
+Inventory stability
+Capacity utilization balance
+Cost
+Revenue impact
+Profit impact
+
+Evaluation functions may vary depending on scenario objectives.
+
+Example evaluation output:
+
+{
+  "operator": "increase_production",
+  "score": 0.84,
+  "service_level": 0.97,
+  "inventory_penalty": 0.12
+}
+
+Evaluation functions are designed to remain transparent and explainable.
+
+16.8 Operator Selection
+
+After evaluating candidate operators, the resolver selects the best operator according to the evaluation function.
+
+Best operator
+↓
+Applied to planning model
+↓
+Planning pipeline recalculated
+
+The chosen operator is recorded in:
+
+operator_spec.json
+
+This file represents the planning decision trace.
+
+16.9 Explainability and Traceability
+
+All resolver decisions must remain explainable.
+
+Key artifacts:
+
+trust_events.json
+operator_candidates.json
+operator_spec.json
+trust_summary.json
+
+These files enable:
+
+reproducibility
+
+debugging
+
+AI-assisted planning review
+
+management explanation
+
+The resolver therefore supports transparent decision processes.
+
+16.10 Integration with AI Planning Systems
+
+The resolver architecture allows integration with AI planning systems.
+
+Possible extensions:
+
+LLM-assisted operator generation
+Reinforcement learning evaluation
+Monte Carlo tree search
+Scenario ranking by AI agents
+
+However, the core architecture ensures that:
+
+AI suggestions remain explainable
+and reproducible within the planning framework
+16.11 Relationship to Management Decision Support
+
+Within the broader WOM architecture, the resolver functions as the decision engine of the planning system.
+
+Detect
+↓
+Summarize
+↓
+Resolver Search
+↓
+Operator Selection
+↓
+Replan
+
+This loop enables WOM to evolve from a planning tool into a structured management decision-support platform.
+
+The resolver therefore forms a central component of the long-term AI-assisted planning and management operating system vision.
