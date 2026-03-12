@@ -1,309 +1,350 @@
 # WOM — Weekly Operation Model
 
-WOM is a **lot-based supply chain planning engine**.
+WOM (Weekly Operation Model) is an experimental planning framework for modeling and simulating economic activity through supply chain flows.
 
-           WOM — Weekly Operation Model
-           Lot-based Supply Chain Planning Engine
+The project explores how **planning systems can evolve from static planning tools into dynamic simulation-based decision engines**.
 
+WOM is designed as a **planning kernel** that integrates:
 
-        Final Market Demand
-                 │
-                 │  Demand creates
-                 ▼
-             LOT_ID Lists
-   (NODE + PRODUCT + YYYYWW + SEQUENCE)
-                 │
-                 │  Backward planning
-                 ▼
-        Lead-Time Positioned Lots
-                 │
-                 │
-                 ▼
-        WOM Planning Engine
-        (Lot-based PSI Simulation)
-                 │
-                 │
-                 ▼
-        Hybrid Push–Pull Network
+- demand modeling
+- supply chain flow simulation
+- evaluation of system performance
+- decision search and corrective planning actions
 
-     Inbound Supply (PUSH)
-           Suppliers
-               ↓
-          Manufacturing (MOM)
-               ↓
-         Distribution (DAD)
-               ↓ PUSH
-       Decoupling Stock Point
-               ↓ PULL
-           Market Nodes
+---
+WOM System Architecture Map
 
-                 │
-                 ▼
-        Explainable Planning Results
+Human Objectives
+        ↓
+   AI Research
+        ↓
+   WOM Architecture
+        ↓
+   Planning Kernel
+        ↓
+Demand → Flow → State
+        ↓
+   Evaluation
+        ↓
+    Resolver
+        ↓
+    Operator
+        ↓
+   Re-simulation
+---
+# Why WOM?
 
-WOM — Weekly Operation Model
-Lot-based Supply Chain Planning Engine
+Traditional planning systems rely on static planning tables.
+
+WOM models economic activity as **flows of supply through a network over time**.
+
+The core principle is:
+
+Flow/Event = source of truth  
+State = derived view
+
+Instead of maintaining static state tables, WOM tracks **events and flows**, from which planning states such as inventory or backlog are derived.
+
+This approach enables:
+
+- explainable planning
+- reproducible simulations
+- AI-assisted decision search
 
 ---
 
-WOM (Weekly Operation Model) is a **lot-based supply chain planning engine** designed to simulate global production, logistics, and demand fulfillment using deterministic planning logic.
+# Core Planning Loop
 
-Unlike traditional planning systems that operate on scalar quantities, WOM operates on **LOT_ID objects**.
+The WOM engine operates as a closed-loop planning system.
 
-This enables:
 
-- demand-anchored planning
-- lot-level traceability
-- explainable planning behavior
-- hybrid push–pull supply chain simulation
+Demand
+↓
+Flow Simulation
+↓
+State Derivation
+↓
+Evaluation
+↓
+Resolver Decision
+↓
+Operator Application
+↓
+Re-Simulation
 
-WOM is designed as the planning core of a future **economic operating system**.
+
+This loop transforms WOM from a planning calculator into a **simulation-driven planning engine**.
 
 ---
 
-# Core Idea
+# Core Concepts
 
-WOM planning follows a simple principle.
+The WOM model is built around six fundamental concepts.
 
+CPU  
+Price  
+Lot  
+Flow  
+Resolver  
+Evaluation  
 
-Demand defines the lot.
-Lots define the plan.
-Supply fulfills the lots.
+### CPU (Common Planning Unit)
 
+The fundamental unit of demand, such as a household consumption unit or market demand segment.
 
-Instead of planning using quantities, WOM represents supply chain flows using **lists of lot objects**.
+### Price
 
+Market signal influencing supply and demand behavior.
 
-quantity = len(lot_id_list)
+### Lot
 
+The basic supply object used by the planning system.
 
-This makes supply chain behavior transparent and explainable.
+### Flow
 
----
+Movement of lots through the supply chain network.
 
-# WOM Planning Model
+### Resolver
 
-The WOM planning model is built on four conceptual layers.
+Decision engine that searches for corrective actions.
 
+### Evaluation
 
-Demand Layer
-↓
-Planning Engine Layer
-↓
-Supply Chain Network Layer
-↓
-Execution / Visualization Layer
-
-
----
-
-# Planning Flow
-
-The planning process follows a deterministic pipeline.
-
-
-Demand generation
-↓
-LOT_ID creation
-↓
-Backward lead-time positioning
-↓
-Forward supply simulation
-↓
-Shipment allocation
-
+Objective function measuring plan quality.
 
 ---
 
-# Hybrid Push–Pull Supply Chain
+# Architecture Overview
 
-WOM models supply chains using a hybrid push–pull structure.
+The WOM system architecture can be understood as a layered model.
 
+Human Objectives  
+↓  
+AI Research Design  
+↓  
+Software Architecture  
+↓  
+Planning Kernel  
+↓  
+Mathematical Model  
+↓  
+Economic System Model  
 
-Inbound Supply Chain (PUSH)
-↓
-Manufacturing (MOM)
-↓
-Outbound PUSH
-↓
-Decoupling Stock Point
-↓
-Outbound PULL
-↓
-Market Demand
-
-
-This structure stabilizes production while allowing flexible demand fulfillment.
+This layered structure allows WOM to function both as a **planning engine and a research platform**.
 
 ---
 
-# LOT_ID — The Planning Unit
+# Planning Engine Modules
 
-The fundamental planning unit in WOM is **LOT_ID**.
-
-Example:
+The WOM planning engine consists of four core modules.
 
 
-TOKYO_DC-DRUG_A-2026050001
+demand_model.py
+flow_engine.py
+evaluation.py
+resolver.py
 
 
-Each LOT_ID represents:
+| Module | Responsibility |
+|------|------|
+| demand_model | demand generation |
+| flow_engine | supply chain simulation |
+| evaluation | plan scoring |
+| resolver | decision search |
 
-- product
-- market node
-- consumption week
-- lot sequence
+---
 
-LOTS move through the supply chain during simulation.
+# Data Model
+
+The WOM planning system uses an event-based data model.
+
+Key entities include:
+
+Lot  
+Event  
+Flow  
+State  
+TrustEvent  
+Operator  
+
+Events represent the **true record of system activity**, while states are derived views computed from event streams.
 
 ---
 
 # Repository Structure
 
+The repository contains a set of architecture and design documents.
 
-WOM
-├ main.py
-├ pysi/
-├ tools/
-├ data/
-├ docs/
-
-├ WOM_DESIGN_PRINCIPLES.md
-├ WOM_PLANNING_THEORY.md
-├ WOM_SYSTEM_OVERVIEW.md
-├ ARCHITECTURE.md
-├ WOM_PIPELINE_SPEC.md
-├ LOT_ID_SPEC.md
-
-├ AI_TEAM.md
-├ AI_MEETING_PROTOCOL.md
-├ DEV_ROADMAP.md
-├ AI_SELF_EVOLUTION.md
+Core documents include:
 
 
----
-
-# Documentation Hierarchy
-
-The WOM design documentation is structured as:
-
-
-Design Philosophy
-WOM_DESIGN_PRINCIPLES.md
-
-Planning Theory
-WOM_PLANNING_THEORY.md
-
-System Overview
-WOM_SYSTEM_OVERVIEW.md
-
-Architecture
 ARCHITECTURE.md
+WOM_META_ARCHITECTURE.md
+WOM_PLANNING_ENGINE_ARCHITECTURE.md
+WOM_EXECUTION_MODEL.md
+WOM_DATA_MODEL.md
+WOM_SYSTEM_DESIGN_INDEX.md
 
-Planning Engine Specification
-WOM_PIPELINE_SPEC.md
 
-LOT Identity Model
-LOT_ID_SPEC.md
-
-
----
-
-# Current Capabilities
-
-WOM currently supports:
-
-- lot-based PSI simulation
-- multi-node supply chain networks
-- hybrid push–pull planning
-- scenario simulation
-- plugin-based extensions
+These documents collectively define the WOM planning system.
 
 ---
 
-# Future Directions
+# AI-Assisted Development
 
-The WOM architecture enables future extensions including:
+The project is designed to support **AI-assisted development workflows**.
 
-- AI-assisted planning
-- enterprise planning systems
-- economic simulation environments
-- global supply chain modeling
+Documentation such as:
 
-WOM may serve as a planning core for a future **economic operating system**.
+AGENTS.md  
+INTERFACE_SPEC.md  
+DEV_ROADMAP.md  
 
----
+enables collaboration between:
 
-# Development Model
-
-WOM development follows an **AI-assisted research lab model**.
-
-Roles include:
-
-- AI Architect
-- AI Engine Developer
-- AI Plugin Developer
-- AI Scenario Designer
-- AI Excel UX Designer
-- AI Tester
-
-Collaboration protocols are defined in:
-
-
-AI_TEAM.md
-AI_MEETING_PROTOCOL.md
-
+- human architects
+- AI design agents
+- code generation systems
 
 ---
 
-# Running WOM
+# Project Scope
 
-Basic execution:
+Current focus areas:
 
+- weekly supply chain planning
+- event-based flow simulation
+- explainable planning artifacts
+- deterministic planning engines
 
-python main.py
-
-
-Example workflows and tools are located in:
-
-
-tools/
-examples/
-data/
-
-
-Detailed instructions are available in:
-
-
-RUN.md
-
+The project may later expand into broader economic system modeling.
 
 ---
 
-# Why WOM Exists
+# Project Status
 
-Traditional supply chain planning systems often suffer from:
+WOM is an experimental research and development project.
 
-- opaque optimization logic
-- limited traceability
-- unstable planning adjustments
+Current priorities include:
 
-WOM addresses these issues by introducing:
+- stabilizing the planning kernel
+- improving modular architecture
+- enabling AI-assisted development
 
-- demand-anchored planning
-- lot-based simulation
-- explainable planning logic
+---
 
+# Getting Started
+
+Recommended reading order:
+
+REPO_BOOTSTRAP.md  
+ARCHITECTURE_MAP.md  
+ARCHITECTURE.md  
+WOM_PLANNING_ENGINE_ARCHITECTURE.md  
+WOM_EXECUTION_MODEL.md  
+WOM_DATA_MODEL.md  
+
+These documents provide a structured introduction to the system.
+
+---
+
+# Summary
+
+WOM combines:
+
+- supply chain flow simulation
+- deterministic planning engines
+- decision search mechanisms
+- structured planning artifacts
+
+into a unified planning framework.
+
+The project explores how **planning systems can be built as simulation-driven economic engines**.
+
+---
+WOM Economic OS Architecture (Final Conceptual Diagram)
+                    ┌─────────────────────────────┐
+                    │        Human Objectives      │
+                    │  Wellbeing / Stability /    │
+                    │  Productivity / Sustainability │
+                    └───────────────┬─────────────┘
+                                    │
+                                    ▼
+                         ┌───────────────────┐
+                         │     Evaluation     │
+                         │  Objective Function│
+                         │                   │
+                         │ U(plan)            │
+                         │ = w1 Service       │
+                         │ + w2 Profit        │
+                         │ - w3 Cost          │
+                         │ - w4 Risk          │
+                         └─────────┬─────────┘
+                                   │
+                                   ▼
+                         ┌───────────────────┐
+                         │      Resolver      │
+                         │ Decision / Search  │
+                         │                   │
+                         │ Operator Selection │
+                         └─────────┬─────────┘
+                                   │
+                                   ▼
+       ┌─────────────────────────────────────────────────────┐
+       │                  WOM Planning Kernel                 │
+       │                                                     │
+       │                                                     │
+       │   CPU (Common Planning Unit)                       │
+       │          ↓                                          │
+       │   Demand Generation                                 │
+       │          ↓                                          │
+       │   LOT Creation                                      │
+       │          ↓                                          │
+       │   Flow Simulation                                   │
+       │                                                     │
+       │   Production → Shipment → Arrival → Sales           │
+       │                                                     │
+       │          ↓                                          │
+       │   State Derivation                                  │
+       │                                                     │
+       │   Inventory / Capacity / Backlog / Service          │
+       │                                                     │
+       └─────────────────────────┬───────────────────────────┘
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │      Price       │
+                        │ Economic Signal  │
+                        │ Demand Response  │
+                        └─────────┬────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │    Economic Network    │
+                     │                        │
+                     │ Factory → Warehouse    │
+                     │        → Market        │
+                     │                        │
+                     │ Nodes / Edges / Flow   │
+                     └──────────┬─────────────┘
+                                │
+                                ▼
+                     ┌────────────────────────┐
+                     │     Agents / Actors    │
+                     │                        │
+                     │ Firms                  │
+                     │ Consumers              │
+                     │ Logistics providers    │
+                     │ Governments            │
+                     └────────────────────────┘
 ---
 
 # License
 
-MIT License
+This project is released under the MIT License.
 
 ---
 
 # Author
 
 Yasushi Osugi
-
-Global Supply Chain Planning Research

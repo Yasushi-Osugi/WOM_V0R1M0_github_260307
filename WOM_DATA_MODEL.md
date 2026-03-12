@@ -1,425 +1,576 @@
-# WOM DATA MODEL
+# WOM_DATA_MODEL.md
 
-This document defines the conceptual data model of WOM
-(Weekly Operation Model).
+Canonical Data Model for the WOM Planning Kernel
 
-It explains the core objects used by the planning engine
-and how they relate to each other.
+## Overview
 
-The WOM data model is built around one central concept:
+This document defines the **core data model** of WOM (Weekly Operation Model).
 
-LOT_ID
+The purpose of this specification is to standardize the main runtime entities used by the WOM planning kernel.
 
-Unlike traditional APS systems that operate on scalar quantities,
-WOM operates on **explicit lot objects**.
+This document defines:
 
----
+- Lot
+- Event
+- Flow
+- State
+- Trust Event
+- Operator
+- Evaluation Result
 
-# 1 Core Design Principle
+These entities are the foundation of:
 
-Traditional planning systems:
+- flow simulation
+- state derivation
+- trust event detection
+- resolver search
+- explainable planning artifacts
 
-Demand → Quantity
+The WOM data model follows one core principle:
 
-WOM:
-
-Demand → LOT_ID objects
-
-Every demand signal generates a set of LOT_IDs,
-which become the atomic planning units throughout the entire supply chain.
-
----
-
-# 2 WOM Core Data Structure
-
-The WOM planning model can be understood as the interaction of
-five core data structures.
-
-
-Scenario
-│
-▼
-Network
-│
-▼
-LOT_ID
-│
-▼
-PSI Lists
-│
-▼
-Evaluation
-
-
-Each structure represents a different layer of planning.
+**Flow/Event is the source of truth.  
+State is a derived view.**
 
 ---
 
-# 3 Scenario
+# 1 Design Principles
 
-A Scenario defines the planning problem.
+The WOM data model follows these rules:
 
-Typical elements:
-
-
-Scenario
-├ planning horizon
-├ demand input
-├ product definitions
-├ node configuration
-├ lot size configuration
-├ lead times
-└ capacity constraints
-
-
-Scenarios are loaded by:
-
-
-pysi/scenario/
-
+1. Events are primary truth.
+2. State is derived from events.
+3. Lots are supply objects, not state tables.
+4. Operators modify events, not derived state.
+5. All core structures must be serializable.
+6. All core structures should be deterministic and explainable.
 
 ---
 
-# 4 Network Model
+# 2 Canonical Dimensions
 
-The Network model represents the physical supply chain.
+Most WOM entities are expressed across one or more of the following dimensions:
 
+- product
+- node
+- market
+- time
+- lot
+- CPU (Common Planning Unit)
 
-Network
-├ Node
-│ ├ factory (MOM)
-│ ├ distribution center (DAD)
-│ ├ decoupling stock point
-│ └ market leaf node
-│
-└ Edge
-├ logistics link
-├ lead time
-└ capacity
-
-
-Nodes form a **tree structure** representing supply chain topology.
-
-Inbound supply chain:
-
-
-Material → Factory
-
-
-Outbound supply chain:
-
-
-Factory → Distribution → Market
-
-
-Defined in:
-
-
-pysi/network/
-
+These dimensions define the planning universe of WOM.
 
 ---
 
-# 5 LOT_ID (Core Object)
+# 3 Lot
 
-The most important object in WOM is:
+## Definition
 
+A **Lot** is the basic supply object handled by the system.
 
-LOT_ID
+A lot represents a unit of supply planning and execution.
 
+Examples:
 
-A LOT_ID represents a specific unit of demand fulfillment.
+- production batch
+- shipment batch
+- allocated supply object
 
-Format:
-
-
-NODE-PRODUCT-YYYYWWNNNN
-
-
-Example:
-
-
-TOKYO_STORE-A-PRODUCT_X-2025460003
-
-
-Meaning:
-
-
-node : TOKYO_STORE-A
-product : PRODUCT_X
-time bucket : 2025 week 46
-sequence : lot 0003
-
-
-A LOT_ID represents:
-
-
-one physical production / shipment lot
-
+A lot is not a state table entry.  
+A lot becomes meaningful when it is connected to events and flows.
 
 ---
 
-# 6 LOT_ID Generation
+## Lot Structure
 
-LOT_IDs are generated from demand signals.
+```python
+from dataclasses import dataclass
+from typing import Optional
 
-Process:
+@dataclass(frozen=True)
+class Lot:
+    lot_id: str
+    product_id: str
+    origin_node: str
+    destination_node: Optional[str]
+    quantity_cpu: float
+    created_time_bucket: str
+    attributes: Optional[dict] = None
+Notes
 
+lot_id must be unique.
 
-Monthly Demand
-│
-▼
-Daily Expansion
-│
-▼
-Weekly Aggregation
-│
-▼
-Lot Size Conversion
-│
-▼
-LOT_ID List
+quantity_cpu is expressed in CPU-compatible units.
 
+destination_node may be unknown at creation time.
 
-Example:
+Additional attributes may include priority, channel, source policy, etc.
 
+4 Event
+Definition
 
-weekly demand = 250 units
-lot size = 100
+An Event is the fundamental runtime record in WOM.
 
-S_lot = 3
+Events describe what happened, where, when, and in what quantity.
 
-LOT_ID list:
+Events are the primary source of truth for the planning kernel.
 
-TOKYO-A-2025460001
-TOKYO-A-2025460002
-TOKYO-A-2025460003
+Examples:
 
+production
 
-These LOT_IDs become the **planning objects** of the engine.
+shipment
 
----
+arrival
 
-# 7 PSI Data Structure
+sale
 
-WOM planning is executed using PSI lists.
+inventory adjustment
 
+Event Structure
+from dataclasses import dataclass
+from typing import Optional
 
-PSI
-├ P[t] = Production LOT_ID list
-├ S[t] = Shipment LOT_ID list
-└ I[t] = Inventory LOT_ID list
+@dataclass(frozen=True)
+class Event:
+    event_id: str
+    lot_id: str
+    event_type: str
+    product_id: str
+    node_id: str
+    time_bucket: str
+    quantity_cpu: float
+    source: Optional[str] = None
+    metadata: Optional[dict] = None
+Typical Event Types
+production
+shipment
+arrival
+sale
+inventory_adjustment
+scrap
+transfer
+Notes
 
+Events must be immutable.
 
-Important:
+Events must be ordered deterministically.
 
+Events may be persisted to flow_events.json.
 
-PSI lists contain LOT_ID objects
-not scalar quantities
+Note
 
+In many WOM kernel implementations, movement-related events are often
+referred to as FlowEvents.
 
-Example:
+FlowEvent is not a separate entity type but a practical specialization
+of Event used during simulation and planning execution.
 
+5 Flow
+Definition
 
-S[2025-W46]
+A Flow is an ordered relationship between events that represents movement through the network.
 
-[
-LOT_2025460001,
-LOT_2025460002
-]
+A flow is conceptually larger than an event.
+An event is a point in time.
+A flow is a movement process.
 
+Examples:
 
-Inventory is also represented as LOT_ID sets.
+factory production → warehouse arrival
 
----
+warehouse shipment → market sale
 
-# 8 Planning Transformation
+In many implementations, Flow may be represented directly by linked events.
 
-Planning transforms LOT_ID positions over time.
+Flow Structure
+from dataclasses import dataclass
+from typing import Optional
 
-Initial state:
+@dataclass(frozen=True)
+class Flow:
+    flow_id: str
+    lot_id: str
+    product_id: str
+    from_node: Optional[str]
+    to_node: Optional[str]
+    start_time_bucket: str
+    end_time_bucket: Optional[str]
+    quantity_cpu: float
+    flow_type: str
+    metadata: Optional[dict] = None
+Typical Flow Types
+production_flow
+shipment_flow
+transfer_flow
+sale_flow
+adjustment_flow
+Notes
 
+A flow may correspond to one event or multiple linked events.
 
-LOT_ID located at market node
+A flow should be reconstructable from underlying events.
 
+Flow is the preferred unit for simulation and operator modification.
 
-Backward planning:
+6 Demand Event
+Definition
 
+A DemandEvent represents market demand entering the planning system.
 
-shift by lead time
+Demand events belong to the market/economic side of the model.
 
+DemandEvent Structure
+from dataclasses import dataclass
+from typing import Optional
 
-Example:
+@dataclass(frozen=True)
+class DemandEvent:
+    demand_id: str
+    market_id: str
+    product_id: str
+    time_bucket: str
+    quantity_cpu: float
+    price: Optional[float] = None
+    channel_id: Optional[str] = None
+    metadata: Optional[dict] = None
+Notes
 
+Demand events are typically generated by demand_model.py.
 
-market demand
-2025-W46
+Demand events are inputs to flow simulation.
 
-factory production
-2025-W42
+Demand may be affected by price, promotion, and policy.
 
+7 State
+Definition
 
-Forward planning then determines the final execution schedule.
+A State is a derived planning view computed from events and flows.
 
----
+State is not primary truth.
 
-# 9 Supply Chain Control Logic
+Examples:
 
-WOM uses hybrid push–pull planning.
+inventory
 
-Inbound supply chain:
+backlog
 
-
-PUSH
-
-
-Material flows forward toward factories.
-
-
-supplier → factory
-
-
-Outbound supply chain:
-
-
-PUSH + PULL
-
-factory → distribution → decoupling stock
-
-
-Then:
-
-
-decoupling stock → market
-
-
-using demand-driven pull.
-
----
-
-# 10 Inventory Representation
-
-Inventory is the set of LOT_IDs currently stored at a node.
-
-
-Inventory(node, t)
-= set of LOT_ID
-
-
-Inventory balancing equation:
-
-
-I[t] = I[t-1] + P[t] - S[t]
-
-
-But instead of scalar arithmetic,
-WOM performs set operations on LOT_ID lists.
-
----
-
-# 11 Evaluation Layer
-
-After planning, WOM evaluates results.
-
-Evaluation dimensions:
-
-
-cost
-revenue
-margin
 service level
-inventory level
-capacity utilization
 
+capacity usage
 
-Evaluation attaches financial metrics to LOT flows.
+financial summary
 
-Implemented in:
+State Structure
+from dataclasses import dataclass
+from typing import Optional
 
+@dataclass(frozen=True)
+class State:
+    inventory_by_node_product_time: dict
+    demand_by_market_product_time: dict
+    supply_by_node_product_time: dict
+    backlog_by_market_product_time: dict
+    capacity_usage_by_resource_time: dict
+    financial_summary: Optional[dict] = None
+Notes
 
-pysi/evaluate/
+State must always be recomputed from events/flows.
 
+State must never be directly mutated by resolver logic.
 
----
+State may be persisted as state_view.json.
 
-# 12 WOM Data Model Summary
+8 Trust Event
+Definition
 
-The WOM system can be summarized as:
+A TrustEvent represents a detected anomaly, inconsistency, or planning issue.
 
+Trust events trigger the resolver.
 
-Scenario
-│
-▼
-Network
-│
-▼
-LOT_ID generation
-│
-▼
-PSI planning
-│
-▼
-Push–Pull execution
-│
-▼
-Evaluation
+Examples:
 
+stockout risk
 
----
+inventory overflow
 
-# 13 Mental Model
+capacity overload
 
-A simple way to understand WOM:
+supply delay
 
+TrustEvent Structure
+from dataclasses import dataclass
+from typing import Optional
 
-Demand creates LOT_IDs
-LOT_IDs move through the network
-PSI tracks their movement
-planning decides their timing
-evaluation measures their value
+@dataclass(frozen=True)
+class TrustEvent:
+    trust_event_id: str
+    event_type: str
+    severity: float
+    node_id: Optional[str]
+    product_id: Optional[str]
+    time_bucket: str
+    message: str
+    evidence: Optional[dict] = None
+Typical Trust Event Types
+E_STOCKOUT_RISK
+E_INVENTORY_CAP_EXCEEDED
+E_CAPACITY_OVERLOAD
+E_SUPPLY_DELAY
+E_DEMAND_SURGE
+Notes
 
+Trust events are derived from state.
 
----
+Trust events should be explainable.
 
-# 14 Relationship to Other Documents
+Trust events are persisted in trust_events.json.
 
-This document connects the core WOM design documents.
+9 Operator
+Definition
 
+An Operator is a structured planning action proposed or selected by the resolver.
 
-WOM_SYSTEM_OVERVIEW.md
-│
-▼
-WOM_PLANNING_THEORY.md
-│
-▼
-WOM_PIPELINE_SPEC.md
-│
-▼
-LOT_ID_SPEC.md
-│
-▼
-WOM_DATA_MODEL.md
+Operators modify flow behavior.
 
+They must not directly modify derived state.
 
----
+Examples:
 
-# 15 Final Insight
+increase production
 
-The most important idea of WOM is:
+shift shipment
 
+reroute flow
 
-Supply chain planning should operate
-on traceable lot objects
-rather than anonymous quantities.
+use buffer inventory
 
+change price
 
-This allows:
+Operator Structure
+from dataclasses import dataclass
+from typing import Optional
 
+@dataclass(frozen=True)
+class Operator:
+    operator_id: str
+    operator_type: str
+    target: dict
+    parameters: dict
+    rationale: Optional[str] = None
+Typical Operator Types
+increase_production
+shift_shipment
+reroute_flow
+use_buffer_inventory
+change_price
+adjust_demand
+Notes
 
-traceability
-explainable planning
-scenario simulation
-economic evaluation
+Operators should be serializable to operator_spec.json.
 
+Operators are applied to events or flows.
 
-within a single unified planning engine.
+Operators must be traceable to trust events and evaluations.
+
+10 Evaluation Result
+Definition
+
+An EvaluationResult represents the output of the evaluation engine.
+
+It contains both total score and decomposed metrics.
+
+EvaluationResult Structure
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass(frozen=True)
+class EvaluationResult:
+    total_score: float
+    service_level: float
+    profit: float
+    inventory_penalty: float
+    risk_penalty: float
+    capacity_balance_score: Optional[float] = None
+    wellbeing_score: Optional[float] = None
+    details: Optional[dict] = None
+Notes
+
+Evaluation must remain decomposable.
+
+Total score must be reproducible from sub-metrics.
+
+Results are persisted in evaluation_results.json.
+
+11 Time Representation
+Canonical Time Bucket
+
+WOM should use a canonical time representation.
+
+Recommended format:
+
+YYYYWW
+
+Examples:
+
+202601
+202602
+202603
+
+Alternative formats may be supported, but conversion should be centralized.
+
+Time Rules
+
+all events must use canonical time buckets
+
+time ordering must be deterministic
+
+weekly planning is the default
+
+monthly views should be derived from weekly/event data
+
+12 Relationships Between Entities
+
+The core relationships of the WOM data model are:
+
+CPU
+↓
+DemandEvent
+↓
+Lot
+↓
+Event
+↓
+Flow
+↓
+State
+↓
+TrustEvent
+↓
+Operator
+↓
+Event / Flow Update
+↓
+New State
+
+This is the core runtime chain of the planning engine.
+
+13 Serialization Artifacts
+
+The following file outputs are expected to be compatible with this data model:
+
+demand_events.json
+flow_events.json
+state_view.json
+trust_events.json
+operator_candidates.json
+operator_spec.json
+evaluation_results.json
+
+Each artifact should use structures consistent with this document.
+
+These artifacts collectively form the planning trace of WOM.
+
+They allow the system to reconstruct, audit, and explain planning decisions.
+
+14 Data Model Rules
+
+The following rules are mandatory.
+
+Rule 1 — Event truth
+
+Events and flows are the only primary source of truth.
+
+Rule 2 — State derivation
+
+State must always be derived.
+
+Rule 3 — Operator boundary
+
+Operators modify event/flow structures only.
+
+Rule 4 — Deterministic IDs
+
+IDs should be stable and reproducible when possible.
+
+Rule 5 — Immutability
+
+Core runtime entities should be treated as immutable.
+
+15 Summary
+
+The WOM data model consists of these core concepts:
+
+Lot = supply object
+
+Event = fundamental planning record
+
+Flow = movement process
+
+DemandEvent = market input
+
+State = derived planning view
+
+TrustEvent = anomaly signal
+
+Operator = corrective action
+
+EvaluationResult = plan quality output
+
+Together they support the WOM planning loop:
+
+Demand → Flow → State → TrustEvent → Operator → New Flow → New State
+
+This data model provides the foundation for:
+
+deterministic planning
+
+explainable simulation
+
+resolver search
+
+AI-assisted planning extensions
+
+16 WOM Planning Kernel Loop
+
+The WOM planning kernel operates through the following runtime chain:
+
+CPU
+↓
+DemandEvent
+↓
+Lot
+↓
+Event / Flow
+↓
+State
+↓
+TrustEvent
+↓
+Operator
+↓
+Event / Flow Update
+↓
+New State
+
+This loop represents the core execution cycle of the WOM planning engine.
+
+Demand generates lots.
+
+Lots produce events.
+
+Events create flows.
+
+Flows derive state.
+
+State produces trust events.
+
+Trust events trigger operators.
+
+Operators modify flows and lots.
+
+The cycle then repeats.
+
+This document defines the canonical runtime data structures
+for the WOM Planning Kernel.
+
+End of Document
