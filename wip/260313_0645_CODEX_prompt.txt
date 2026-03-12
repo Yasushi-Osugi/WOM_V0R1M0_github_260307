@@ -1,0 +1,120 @@
+Good first implementation.
+
+The minimal kernel is architecturally aligned with WOM in the following important ways:
+
+- Flow/Event is treated as the source of truth
+- StateView is derived from events
+- Operators do not mutate StateView directly
+- PlanningKernel acts as an orchestrator
+- Deterministic ordering is explicitly handled
+
+So this is a valid first working WOM kernel.
+
+Now please refine it with a small second iteration.
+
+Do not redesign the whole module.
+Do not expand scope beyond the minimal kernel.
+
+------------------------------------------------------------
+Required refinements
+------------------------------------------------------------
+
+1. Improve the initial lot-to-flow conversion
+
+Currently, lots are converted too directly into arrival events.
+
+Please replace the initial lot-to-arrival shortcut with a slightly richer and still minimal conversion.
+
+Preferred minimal pattern:
+
+production + arrival
+
+or
+
+production + shipment + arrival
+
+Keep it deterministic and small.
+
+------------------------------------------------------------
+
+2. Clarify FlowEvent identity naming
+
+The current FlowEvent uses a field name like flow_id even though the structure behaves like an event record.
+
+Please do one of the following:
+
+Option A:
+Rename flow_id to event_id consistently
+
+Option B:
+Keep flow_id, but add a short explanatory comment describing why this structure is still treated as a FlowEvent in the minimal kernel
+
+Choose the smaller and clearer option.
+
+------------------------------------------------------------
+
+3. Add minimal capacity usage derivation
+
+StateView already includes capacity usage, but it is not meaningfully derived yet.
+
+Please add a minimal deterministic capacity usage calculation.
+
+A simple approach is enough, for example:
+
+- production events consume node/week capacity
+- derive capacity usage by (node, time_bucket)
+
+Then add one minimal capacity-related trust event such as:
+
+E_CAPACITY_OVERLOAD
+
+Keep it simple.
+
+------------------------------------------------------------
+
+4. Replace resolver-created “magic arrival”
+
+Currently, the resolver improves backlog by creating a synthetic arrival too directly.
+
+Please replace that behavior with one small but more WOM-aligned operator pattern.
+
+Preferred options:
+
+- reroute existing lot
+- shift shipment timing
+- add production event
+
+Choose the smallest deterministic implementation.
+
+Do not introduce a complex search framework.
+
+------------------------------------------------------------
+Constraints
+------------------------------------------------------------
+
+Keep these architectural rules:
+
+1. Flow/Event is the source of truth
+2. StateView is derived only from events
+3. StateView must never be directly mutated
+4. Operators modify planning objects only
+5. Deterministic ordering must remain explicit
+
+No randomness.
+No external dependencies.
+No plugins.
+No framework expansion.
+
+------------------------------------------------------------
+Deliverables
+------------------------------------------------------------
+
+Please return:
+
+1. Updated files
+2. Full revised source code
+3. Summary of design changes
+4. Demo command
+5. Test updates
+
+Keep the implementation small, deterministic, and readable.

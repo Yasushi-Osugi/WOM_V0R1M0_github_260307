@@ -1,0 +1,168 @@
+WOM Kernel
+2nd Review Template (for Codex revision)
+これを そのまま ChatGPT に貼るテンプレートとして保存してください。
+You are performing the second architecture review
+for a WOM Planning Kernel implementation.
+
+The first version already worked.
+This is a refinement pass.
+
+Your task is to verify that the revision still respects
+the WOM architectural rules while improving realism.
+
+--------------------------------------------------------
+INPUT
+--------------------------------------------------------
+
+Below is the revised implementation returned by Codex.
+
+[PASTE CODE HERE]
+
+--------------------------------------------------------
+ARCHITECTURE RULES (WOM)
+--------------------------------------------------------
+
+The kernel must respect these principles:
+
+1. Flow/Event is the source of truth
+2. StateView is derived only from events
+3. StateView must never be directly mutated
+4. Operators modify planning objects only
+5. Kernel remains deterministic
+6. PlanningKernel is orchestration only
+
+--------------------------------------------------------
+REVIEW TASK
+--------------------------------------------------------
+
+Perform a structured architecture review.
+
+Return results in the following sections.
+
+--------------------------------------------------------
+1. Architecture Integrity
+--------------------------------------------------------
+
+Verify:
+
+Flow/Event is primary data
+StateView is derived
+Operators do not modify StateView
+PlanningKernel is orchestration only
+
+Return:
+
+Architecture Integrity:
+PASS / WARNING / FAIL
+
+Explain any violation.
+
+--------------------------------------------------------
+2. Event-Sourcing Compliance
+--------------------------------------------------------
+
+Verify that the system follows event-sourcing behavior:
+
+events are append-only
+state is recomputed from events
+event ordering is deterministic
+
+Return:
+
+Event Model:
+PASS / WARNING / FAIL
+
+Explain risks if present.
+
+--------------------------------------------------------
+3. Deterministic Execution
+--------------------------------------------------------
+
+Check whether execution is deterministic.
+
+Look for:
+
+explicit event ordering
+no random behavior
+stable resolver selection
+
+Return:
+
+Determinism:
+PASS / WARNING / FAIL
+
+Explain potential nondeterminism.
+
+--------------------------------------------------------
+4. Kernel Scope Control
+--------------------------------------------------------
+
+Verify that the kernel has not grown too large.
+
+Check:
+
+no framework expansion
+no plugins implemented
+no external dependencies
+
+Return:
+
+Kernel Scope:
+PASS / WARNING / FAIL
+
+--------------------------------------------------------
+5. Improvement Validation
+--------------------------------------------------------
+
+Verify that the revision improved these areas:
+
+Lot → Flow conversion
+capacity reasoning
+resolver behavior
+
+Return:
+
+Improvement Quality:
+GOOD / PARTIAL / UNCLEAR
+
+Explain briefly.
+
+--------------------------------------------------------
+6. Code Quality
+--------------------------------------------------------
+
+Evaluate:
+
+readability
+class boundaries
+testability
+
+Score:
+
+Code quality score: 1–10
+
+--------------------------------------------------------
+7. Risks
+--------------------------------------------------------
+
+List any architectural or logical risks.
+
+Examples:
+
+state mutation risk
+event ordering bugs
+resolver instability
+
+--------------------------------------------------------
+8. Final Verdict
+--------------------------------------------------------
+
+Return one of the following:
+
+APPROVE
+APPROVE WITH MINOR FIXES
+REVISE
+REJECT
+
+Explain reasoning in 3–5 sentences.
+

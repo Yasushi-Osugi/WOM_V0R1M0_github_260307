@@ -1,0 +1,178 @@
+You are a core engine developer working on the WOM project.
+
+Repository:
+https://github.com/Yasushi-Osugi/WOM_V0R1M0_github_260307
+
+Your role is to implement the core WOM Planning Kernel according to the architectural documents in this repository.
+
+You are NOT writing a random implementation.
+
+You must follow the architecture defined in the documentation.
+
+------------------------------------------------------------
+STEP 1 — Read the repository
+------------------------------------------------------------
+
+Before implementing anything, read the following files in this order.
+
+1 README.md
+2 ARCHITECTURE.md
+3 WOM_DATA_MODEL.md
+4 WOM_EXECUTION_MODEL.md
+5 WOM_PLANNING_ENGINE_ARCHITECTURE.md
+6 INTERFACE_SPEC.md
+7 KERNEL_RULES.md
+
+These files define the WOM architecture.
+
+Do not start coding before understanding them.
+
+------------------------------------------------------------
+STEP 2 — Understand the WOM Planning Model
+------------------------------------------------------------
+
+The WOM system is a planning kernel based on the following core entities.
+
+Lot
+FlowEvent
+DemandEvent
+StateView
+TrustEvent
+Operator
+Resolver
+PlanningKernel
+
+Core architectural rules:
+
+1. Flow/Event is the source of truth
+2. State is a derived view
+3. Operators modify planning objects (lots / flows)
+4. StateView must never be directly mutated
+5. Planning must remain deterministic and explainable
+
+Planning loop:
+
+DemandEvent generation
+↓
+Flow simulation
+↓
+State derivation
+↓
+Trust event detection
+↓
+Evaluation
+↓
+Resolver decision
+↓
+Operator application
+↓
+Re-simulation
+
+------------------------------------------------------------
+STEP 3 — Your task
+------------------------------------------------------------
+
+Implement the minimal WOM Planning Kernel.
+
+Required core classes:
+
+Lot
+FlowEvent
+DemandEvent
+StateView
+Operator
+PlanningKernel
+
+Optional helper classes:
+
+FlowEngine
+Evaluator
+Resolver
+
+The kernel must support the following runtime behavior:
+
+1 DemandEvent generation
+2 Flow simulation
+3 State derivation
+4 Trust event detection
+5 Evaluation
+6 Resolver operator selection
+7 Operator application
+8 Re-simulation loop
+
+Target code size:
+
+150–300 lines
+
+Language:
+
+Python
+
+------------------------------------------------------------
+STEP 4 — Output expected in this conversation
+------------------------------------------------------------
+
+Before implementing code, produce the following.
+
+1 Architecture understanding summary
+2 Proposed file structure for the kernel implementation
+3 Minimal kernel code design (class responsibilities)
+
+Do NOT write the implementation yet.
+
+------------------------------------------------------------
+STEP 5 — Implementation constraints
+------------------------------------------------------------
+
+Follow the architectural rules defined in:
+
+ARCHITECTURE.md
+KERNEL_RULES.md
+INTERFACE_SPEC.md
+
+Additional constraints:
+
+- Deterministic behavior
+- No hidden randomness
+- No external dependencies
+- Pure Python
+- Clear data structures
+
+------------------------------------------------------------
+STEP 6 — Repository integration
+------------------------------------------------------------
+
+The kernel should eventually live under a structure similar to:
+
+pysi/core/kernel/
+
+Suggested modules:
+
+lot.py
+events.py
+state_view.py
+operator.py
+resolver.py
+planning_kernel.py
+
+However, first propose your own structure.
+
+------------------------------------------------------------
+STEP 7 — Important instructions
+------------------------------------------------------------
+
+Do not implement plugins.
+
+Do not modify the existing architecture.
+
+Focus only on the minimal deterministic kernel.
+
+After the architecture proposal is reviewed, implementation will follow.
+
+------------------------------------------------------------
+
+Begin by analyzing the repository and producing:
+
+1 architecture understanding summary
+2 kernel file structure proposal
+3 minimal kernel design

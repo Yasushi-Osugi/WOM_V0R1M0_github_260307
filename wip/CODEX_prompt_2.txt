@@ -1,0 +1,152 @@
+
+
+Your architecture understanding and proposed kernel structure are aligned with the WOM architecture.
+
+You may proceed to the implementation phase.
+
+However, for the first working version, keep the implementation smaller and simpler than your proposed multi-file structure.
+
+------------------------------------------------------------
+Implementation scope
+------------------------------------------------------------
+
+Implement the **minimal deterministic WOM Planning Kernel**.
+
+For the first working version, use ONE of the following structures.
+
+Option A (preferred for first version)
+
+pysi/core/kernel/minimal_kernel.py
+
+
+Option B (if needed)
+
+pysi/core/kernel/
+    entities.py
+    engines.py
+    planning_kernel.py
+
+Avoid creating many modules in the first iteration.
+
+The goal is a **small working kernel**, not a full framework.
+
+------------------------------------------------------------
+Kernel requirements
+------------------------------------------------------------
+
+The kernel must implement the following runtime loop:
+
+DemandEvent generation
+↓
+Flow simulation
+↓
+State derivation
+↓
+Trust event detection
+↓
+Evaluation
+↓
+Resolver operator selection
+↓
+Operator application
+↓
+Re-simulation loop
+
+Core entities:
+
+Lot
+FlowEvent
+DemandEvent
+StateView
+Operator
+PlanningKernel
+
+Optional helpers:
+
+FlowEngine
+Evaluator
+Resolver
+
+------------------------------------------------------------
+Architectural rules (must follow)
+------------------------------------------------------------
+
+1. Flow/Event is the source of truth.
+
+2. StateView is a derived view generated from FlowEvents.
+
+3. StateView must never be directly mutated.
+
+4. Operators must modify planning objects (FlowEvents or Lots).
+
+5. Deterministic ordering must be preserved.
+
+Use explicit ordering keys such as:
+
+time_bucket
+event_priority
+creation_sequence
+
+6. No randomness.
+
+7. No external dependencies.
+
+Pure Python only.
+
+------------------------------------------------------------
+Implementation size target
+------------------------------------------------------------
+
+150–300 lines of Python code.
+
+Keep the implementation readable and deterministic.
+
+------------------------------------------------------------
+Demo requirement
+------------------------------------------------------------
+
+Include a minimal runnable demo.
+
+Example usage:
+
+python minimal_kernel.py
+
+The demo should:
+
+create sample lots
+create sample demand events
+run the planning kernel
+print final evaluation metrics
+
+------------------------------------------------------------
+Test requirement
+------------------------------------------------------------
+
+Add minimal deterministic tests.
+
+Example:
+
+tests/test_minimal_kernel.py
+
+Tests should verify:
+
+flow simulation determinism
+state derivation
+trust event detection
+resolver operator application
+
+------------------------------------------------------------
+Output format
+------------------------------------------------------------
+
+When you respond, include:
+
+1. Files created
+2. Full source code
+3. Demo command
+4. Test description
+5. Explanation of design choices
+
+------------------------------------------------------------
+
+Begin implementation now.
