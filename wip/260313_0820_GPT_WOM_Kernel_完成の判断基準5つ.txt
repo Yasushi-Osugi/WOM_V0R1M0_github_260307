@@ -1,0 +1,156 @@
+WOM Kernel 完成の判断基準（5つ）
+1. Event-Sourcing が完全に成立している
+
+最重要条件です。
+
+Flow/Event = source of truth
+State = derived view
+
+つまり
+
+events
+↓
+derive state
+
+のみで state が再構成できること。
+
+必要条件
+
+StateView を直接更新するコードが存在しない
+
+run_flow → derive_state で state が再計算される
+
+event log だけで計画を再現できる
+
+これは Explainable Planning Engine の核心です。
+
+2. Deterministic Execution
+
+同じ入力なら 必ず同じ結果になること。
+
+つまり
+
+Demand
+Lots
+Network
+Policy
+
+が同じなら
+
+Plan
+
+も必ず同じです。
+
+そのために必要なのは
+
+explicit event ordering
+
+例
+
+time_bucket
+event_priority
+creation_sequence
+event_id
+
+です。
+
+これは AI planning engine では非常に重要な性質です。
+
+3. Minimal Economic Flow Model
+
+Kernel が 最低限の経済 flow を再現できること。
+
+必要な flow chain はこれです。
+
+production
+→ shipment
+→ arrival
+→ sale
+
+つまり supply chain の最小物理法則です。
+
+この chain がないと
+
+economic physics
+
+が成立しません。
+
+4. Trust Event System
+
+Kernel は 問題を自動検出できる必要があります。
+
+つまり
+
+state
+↓
+trust events
+
+です。
+
+例
+
+E_STOCKOUT_RISK
+E_CAPACITY_OVERLOAD
+
+これがないと
+
+resolver
+
+が働きません。
+
+5. Resolver Loop
+
+Kernel は 自動修正ループを持つ必要があります。
+
+trust event
+↓
+operator candidates
+↓
+apply operator
+↓
+re-simulation
+
+つまり
+
+planning loop
+
+です。
+
+これがあると
+
+Kernel は
+
+self-correcting simulation
+
+になります。
+
+この5つを図にすると
+              WOM Planning Kernel
+------------------------------------------------
+
+Events
+↓
+Flow Simulation
+↓
+State Derivation
+↓
+Trust Event Detection
+↓
+Resolver
+↓
+Operator
+↓
+Re-simulation
+Kernel 完成の定義
+
+この5条件を満たすと
+
+Kernel Complete
+
+と言えます。
+
+その時点で Kernel は
+
+planning engine core
+
+になります。

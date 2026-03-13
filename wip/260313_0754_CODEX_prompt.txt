@@ -1,0 +1,135 @@
+You are refining the WOM Planning Kernel implementation.
+
+Repository:
+https://github.com/Yasushi-Osugi/WOM_V0R1M0_github_260307
+
+Please work from the latest main branch.
+
+The previous revision successfully improved:
+
+- lot → flow conversion
+- capacity reasoning
+- resolver behavior
+
+Architecture review result:
+APPROVE WITH MINOR FIXES
+
+This task is a **small refinement pass**.
+
+Do NOT redesign the kernel.
+Do NOT introduce new frameworks or dependencies.
+
+The goal is to improve realism while preserving
+the existing WOM kernel architecture.
+
+------------------------------------------------------------
+Architectural rules (must remain unchanged)
+------------------------------------------------------------
+
+1. Flow/Event is the source of truth
+2. StateView is derived only from events
+3. StateView must never be mutated directly
+4. Operators modify planning objects only
+5. PlanningKernel is orchestration only
+6. Execution must remain deterministic
+
+------------------------------------------------------------
+Refinement tasks
+------------------------------------------------------------
+
+1. Prevent unrealistic production at market nodes
+
+Currently the resolver may add production events
+directly at a market node when a stockout occurs.
+
+Refine the resolver logic so that:
+
+- production can only occur at nodes that are marked
+  as production-capable nodes
+- if the stockout node is not production-capable,
+  the resolver should select the nearest upstream node
+  (or origin node from the lot definition)
+
+Keep the implementation simple and deterministic.
+
+------------------------------------------------------------
+
+2. Improve flow realism for production → shipment → arrival
+
+Ensure the flow chain behaves consistently:
+
+production → shipment → arrival → sale
+
+Production should increase inventory at the source node.
+
+Shipment should move inventory from source node
+to destination node with lead time.
+
+Arrival should increase inventory at destination.
+
+Sale should consume inventory.
+
+Do not implement a full logistics model.
+Only ensure the minimal chain is logically consistent.
+
+------------------------------------------------------------
+
+3. Refine capacity reasoning
+
+Currently capacity is treated as a simple scalar limit.
+
+Improve this slightly by tracking capacity usage per:
+
+(node_id, time_bucket)
+
+StateView should expose:
+
+capacity_usage_by_resource_time
+
+Trust events should detect:
+
+E_CAPACITY_OVERLOAD
+
+Keep the calculation minimal.
+
+------------------------------------------------------------
+
+4. Clarify FlowEvent identity
+
+FlowEvent currently uses flow_id.
+
+Add a short comment clarifying that:
+
+FlowEvent represents a deterministic event record
+even though the name retains "flow_id"
+for compatibility with earlier minimal kernel versions.
+
+No renaming required.
+
+------------------------------------------------------------
+
+5. Preserve deterministic ordering
+
+Ensure event ordering remains explicitly defined:
+
+(time_bucket,
+ event_priority,
+ creation_sequence,
+ flow_id)
+
+Do not rely on implicit list ordering.
+
+------------------------------------------------------------
+Deliverables
+------------------------------------------------------------
+
+Return:
+
+1. Updated kernel source code
+2. Short explanation of the changes
+3. Confirmation that architectural rules are preserved
+4. Updated minimal test cases if required
+5. Example demo command
+
+Keep the kernel small and readable.
+Do not introduce plugins or framework expansion.
