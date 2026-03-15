@@ -1,0 +1,639 @@
+PRAGMA foreign_keys = ON;
+
+----------------------------------------------------------------
+-- Sample Scenario
+----------------------------------------------------------------
+
+INSERT INTO sc_scenario (
+    scenario_id,
+    scenario_name,
+    scenario_type,
+    parent_scenario_id,
+    description,
+    version_label,
+    status,
+    created_by,
+    created_at,
+    updated_at
+) VALUES (
+    'sc-demo-phone-jp-v1',
+    'Demo Phone JP Scenario',
+    'asis',
+    NULL,
+    'Minimal SQLite sample scenario for WOM Kernel replay',
+    'v1',
+    'active',
+    'yasushi',
+    '2026-03-13T09:00:00Z',
+    '2026-03-13T09:00:00Z'
+);
+
+----------------------------------------------------------------
+-- Sample Lots
+----------------------------------------------------------------
+
+INSERT INTO sc_lot (
+    lot_id,
+    scenario_id,
+    lot_type,
+    product_id,
+    origin_node,
+    destination_node,
+    final_market_node,
+    quantity_cpu,
+    uom,
+    created_time_bucket,
+    requested_arrival_time_bucket,
+    priority_class,
+    service_class,
+    routing_group,
+    cost_class,
+    ownership_node,
+    status,
+    attributes_json,
+    created_at,
+    updated_at
+) VALUES
+(
+    'lot-202611-P1-0001',
+    'sc-demo-phone-jp-v1',
+    'demand_anchored_lot',
+    'P1',
+    'factory_A',
+    'market_TYO',
+    'market_TYO',
+    70.0,
+    'case',
+    '202611',
+    '202612',
+    'normal',
+    'standard',
+    'JP_standard',
+    'standard_cost',
+    'legal_entity_JP',
+    'planned',
+    '{"customer_segment":"retail"}',
+    '2026-03-13T09:00:00Z',
+    '2026-03-13T09:00:00Z'
+),
+(
+    'lot-202611-P1-0002',
+    'sc-demo-phone-jp-v1',
+    'demand_anchored_lot',
+    'P1',
+    'factory_A',
+    'market_OSA',
+    'market_OSA',
+    20.0,
+    'case',
+    '202611',
+    '202612',
+    'normal',
+    'standard',
+    'JP_standard',
+    'standard_cost',
+    'legal_entity_JP',
+    'planned',
+    '{"customer_segment":"retail"}',
+    '2026-03-13T09:00:00Z',
+    '2026-03-13T09:00:00Z'
+);
+
+----------------------------------------------------------------
+-- Sample Demand
+----------------------------------------------------------------
+
+INSERT INTO sc_demand_event (
+    demand_id,
+    scenario_id,
+    market_id,
+    product_id,
+    time_bucket,
+    quantity_cpu,
+    price,
+    channel_id,
+    attributes_json,
+    created_at,
+    updated_at
+) VALUES
+(
+    'd-202612-market_TYO-P1-001',
+    'sc-demo-phone-jp-v1',
+    'market_TYO',
+    'P1',
+    '202612',
+    100.0,
+    1200.0,
+    'retail',
+    '{"promotion_flag":false}',
+    '2026-03-13T09:00:00Z',
+    '2026-03-13T09:00:00Z'
+),
+(
+    'd-202612-market_OSA-P1-001',
+    'sc-demo-phone-jp-v1',
+    'market_OSA',
+    'P1',
+    '202612',
+    20.0,
+    1180.0,
+    'retail',
+    '{"promotion_flag":false}',
+    '2026-03-13T09:00:00Z',
+    '2026-03-13T09:00:00Z'
+);
+
+----------------------------------------------------------------
+-- Sample Planning Session
+----------------------------------------------------------------
+
+INSERT INTO run_planning_session (
+    session_id,
+    scenario_id,
+    engine_version,
+    kernel_version,
+    policy_set_id,
+    plugin_set_id,
+    started_at,
+    completed_at,
+    status,
+    initiated_by,
+    notes
+) VALUES (
+    'sess-demo-001',
+    'sc-demo-phone-jp-v1',
+    'planning-engine-v0',
+    'kernel-v1.1',
+    NULL,
+    NULL,
+    '2026-03-13T09:05:00Z',
+    NULL,
+    'running',
+    'yasushi',
+    'Initial sample session'
+);
+
+----------------------------------------------------------------
+-- Initial Flow Events generated from lots
+----------------------------------------------------------------
+
+INSERT INTO ev_flow_event (
+    flow_id,
+    scenario_id,
+    session_id,
+    iteration_no,
+    lot_id,
+    event_type,
+    product_id,
+    from_node,
+    to_node,
+    time_bucket,
+    quantity_cpu,
+    creation_sequence,
+    event_priority,
+    causal_event_id,
+    operator_id,
+    source_type,
+    status,
+    metadata_json,
+    created_at
+) VALUES
+(
+    'f-lot-202611-P1-0001-prod',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'lot-202611-P1-0001',
+    'production',
+    'P1',
+    'factory_A',
+    'factory_A',
+    '202611',
+    70.0,
+    1,
+    10,
+    NULL,
+    NULL,
+    'initial_lot',
+    'planned',
+    '{"source":"initial_lot"}',
+    '2026-03-13T09:05:10Z'
+),
+(
+    'f-lot-202611-P1-0001-ship',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'lot-202611-P1-0001',
+    'shipment',
+    'P1',
+    'factory_A',
+    'market_TYO',
+    '202611',
+    70.0,
+    2,
+    20,
+    NULL,
+    NULL,
+    'initial_lot',
+    'planned',
+    '{"source":"initial_lot"}',
+    '2026-03-13T09:05:11Z'
+),
+(
+    'f-lot-202611-P1-0001-arr',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'lot-202611-P1-0001',
+    'arrival',
+    'P1',
+    'factory_A',
+    'market_TYO',
+    '202612',
+    70.0,
+    3,
+    30,
+    'f-lot-202611-P1-0001-ship',
+    NULL,
+    'initial_lot',
+    'planned',
+    '{"source":"initial_lot"}',
+    '2026-03-13T09:05:12Z'
+),
+(
+    'f-lot-202611-P1-0002-prod',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'lot-202611-P1-0002',
+    'production',
+    'P1',
+    'factory_A',
+    'factory_A',
+    '202611',
+    20.0,
+    4,
+    10,
+    NULL,
+    NULL,
+    'initial_lot',
+    'planned',
+    '{"source":"initial_lot"}',
+    '2026-03-13T09:05:13Z'
+),
+(
+    'f-lot-202611-P1-0002-ship',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'lot-202611-P1-0002',
+    'shipment',
+    'P1',
+    'factory_A',
+    'market_OSA',
+    '202611',
+    20.0,
+    5,
+    20,
+    NULL,
+    NULL,
+    'initial_lot',
+    'planned',
+    '{"source":"initial_lot"}',
+    '2026-03-13T09:05:14Z'
+),
+(
+    'f-lot-202611-P1-0002-arr',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'lot-202611-P1-0002',
+    'arrival',
+    'P1',
+    'factory_A',
+    'market_OSA',
+    '202612',
+    20.0,
+    6,
+    30,
+    'f-lot-202611-P1-0002-ship',
+    NULL,
+    'initial_lot',
+    'planned',
+    '{"source":"initial_lot"}',
+    '2026-03-13T09:05:15Z'
+);
+
+----------------------------------------------------------------
+-- Iteration 0 trust event (TYO shortage 30)
+----------------------------------------------------------------
+
+INSERT INTO ev_trust_event (
+    trust_event_id,
+    scenario_id,
+    session_id,
+    iteration_no,
+    event_type,
+    severity,
+    node_id,
+    product_id,
+    time_bucket,
+    message,
+    evidence_json,
+    created_at
+) VALUES (
+    'te-stockout-market_TYO-P1-202612',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'E_STOCKOUT_RISK',
+    30.0,
+    'market_TYO',
+    'P1',
+    '202612',
+    'Backlog 30 detected',
+    '{"backlog":30.0}',
+    '2026-03-13T09:06:00Z'
+);
+
+----------------------------------------------------------------
+-- Operator selected at iteration 0
+----------------------------------------------------------------
+
+INSERT INTO ev_operator_action (
+    operator_id,
+    scenario_id,
+    session_id,
+    iteration_no,
+    operator_type,
+    target_json,
+    parameters_json,
+    rationale,
+    selected_flag,
+    created_at
+) VALUES (
+    'op-prod-te-stockout-market_TYO-P1-202612',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    0,
+    'add_production',
+    '{"source_node":"factory_A","destination_node":"market_TYO","product":"P1","time_bucket":"202612"}',
+    '{"quantity_cpu":30.0}',
+    'Resolve stockout via additional production',
+    1,
+    '2026-03-13T09:06:10Z'
+);
+
+----------------------------------------------------------------
+-- Resolver-generated corrective events
+----------------------------------------------------------------
+
+INSERT INTO ev_flow_event (
+    flow_id,
+    scenario_id,
+    session_id,
+    iteration_no,
+    lot_id,
+    event_type,
+    product_id,
+    from_node,
+    to_node,
+    time_bucket,
+    quantity_cpu,
+    creation_sequence,
+    event_priority,
+    causal_event_id,
+    operator_id,
+    source_type,
+    status,
+    metadata_json,
+    created_at
+) VALUES
+(
+    'f-op-prod-te-stockout-market_TYO-P1-202612-prod',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'lot-op-prod-te-stockout-market_TYO-P1-202612',
+    'production',
+    'P1',
+    'factory_A',
+    'factory_A',
+    '202612',
+    30.0,
+    7,
+    10,
+    NULL,
+    'op-prod-te-stockout-market_TYO-P1-202612',
+    'resolver_generated',
+    'planned',
+    '{"operator_id":"op-prod-te-stockout-market_TYO-P1-202612"}',
+    '2026-03-13T09:06:20Z'
+),
+(
+    'f-op-prod-te-stockout-market_TYO-P1-202612-ship',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'lot-op-prod-te-stockout-market_TYO-P1-202612',
+    'shipment',
+    'P1',
+    'factory_A',
+    'market_TYO',
+    '202612',
+    30.0,
+    8,
+    20,
+    NULL,
+    'op-prod-te-stockout-market_TYO-P1-202612',
+    'resolver_generated',
+    'planned',
+    '{"operator_id":"op-prod-te-stockout-market_TYO-P1-202612"}',
+    '2026-03-13T09:06:21Z'
+),
+(
+    'f-op-prod-te-stockout-market_TYO-P1-202612-arr',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'lot-op-prod-te-stockout-market_TYO-P1-202612',
+    'arrival',
+    'P1',
+    'factory_A',
+    'market_TYO',
+    '202612',
+    30.0,
+    9,
+    30,
+    'f-op-prod-te-stockout-market_TYO-P1-202612-ship',
+    'op-prod-te-stockout-market_TYO-P1-202612',
+    'resolver_generated',
+    'planned',
+    '{"operator_id":"op-prod-te-stockout-market_TYO-P1-202612"}',
+    '2026-03-13T09:06:22Z'
+);
+
+----------------------------------------------------------------
+-- Iteration History
+----------------------------------------------------------------
+
+INSERT INTO run_iteration_history (
+    iteration_history_id,
+    session_id,
+    iteration_no,
+    evaluation_score,
+    service_level,
+    inventory_penalty,
+    risk_penalty,
+    selected_operator_id,
+    trust_event_count,
+    notes,
+    created_at
+) VALUES
+(
+    'iterhist-sess-demo-001-0',
+    'sess-demo-001',
+    0,
+    0.744,
+    0.75,
+    0.006,
+    0.0,
+    'op-prod-te-stockout-market_TYO-P1-202612',
+    1,
+    'Initial shortage detected in Tokyo',
+    '2026-03-13T09:06:30Z'
+),
+(
+    'iterhist-sess-demo-001-1',
+    'sess-demo-001',
+    1,
+    0.994,
+    1.0,
+    0.006,
+    0.0,
+    NULL,
+    0,
+    'Shortage resolved after corrective production',
+    '2026-03-13T09:06:40Z'
+);
+
+----------------------------------------------------------------
+-- Optional sale analytics rows
+----------------------------------------------------------------
+
+INSERT INTO ev_flow_event (
+    flow_id,
+    scenario_id,
+    session_id,
+    iteration_no,
+    lot_id,
+    event_type,
+    product_id,
+    from_node,
+    to_node,
+    time_bucket,
+    quantity_cpu,
+    creation_sequence,
+    event_priority,
+    causal_event_id,
+    operator_id,
+    source_type,
+    status,
+    metadata_json,
+    created_at
+) VALUES
+(
+    'f-sale-market_OSA-P1-202612-001',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'lot-202611-P1-0002',
+    'sale',
+    'P1',
+    'market_OSA',
+    'market_OSA',
+    '202612',
+    20.0,
+    10,
+    40,
+    NULL,
+    NULL,
+    'demand_fulfillment',
+    'planned',
+    '{"demand_id":"d-202612-market_OSA-P1-001"}',
+    '2026-03-13T09:06:50Z'
+),
+(
+    'f-sale-market_TYO-P1-202612-001',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'lot-202611-P1-0001',
+    'sale',
+    'P1',
+    'market_TYO',
+    'market_TYO',
+    '202612',
+    100.0,
+    11,
+    40,
+    NULL,
+    NULL,
+    'demand_fulfillment',
+    'planned',
+    '{"demand_ids":["d-202612-market_TYO-P1-001"]}',
+    '2026-03-13T09:06:51Z'
+);
+
+INSERT INTO ev_sale_event (
+    sale_id,
+    flow_id,
+    scenario_id,
+    session_id,
+    iteration_no,
+    market_id,
+    product_id,
+    time_bucket,
+    quantity_cpu,
+    source_node,
+    demand_id,
+    price,
+    revenue_amount,
+    metadata_json,
+    created_at
+) VALUES
+(
+    'sale-market_OSA-P1-202612-001',
+    'f-sale-market_OSA-P1-202612-001',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'market_OSA',
+    'P1',
+    '202612',
+    20.0,
+    'market_OSA',
+    'd-202612-market_OSA-P1-001',
+    1180.0,
+    23600.0,
+    '{}',
+    '2026-03-13T09:06:55Z'
+),
+(
+    'sale-market_TYO-P1-202612-001',
+    'f-sale-market_TYO-P1-202612-001',
+    'sc-demo-phone-jp-v1',
+    'sess-demo-001',
+    1,
+    'market_TYO',
+    'P1',
+    '202612',
+    100.0,
+    'market_TYO',
+    'd-202612-market_TYO-P1-001',
+    1200.0,
+    120000.0,
+    '{}',
+    '2026-03-13T09:06:56Z'
+);
